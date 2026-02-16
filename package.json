@@ -1,25 +1,28 @@
 {
-"name": "pmr-smanel-report",
-"private": true,
-"version": "1.0.0",
-"type": "module",
-"homepage": "https://www.google.com/search?q=https://pmrsmanel-ai.github.io/Report_System",
-"scripts": {
-"dev": "vite",
-"build": "vite build",
-"lint": "eslint .",
-"preview": "vite preview",
-"predeploy": "npm run build",
-"deploy": "gh-pages -d dist"
-},
-"dependencies": {
-"lucide-react": "^0.400.0",
-"react": "^18.3.1",
-"react-dom": "^18.3.1"
-},
-"devDependencies": {
-"@vitejs/plugin-react": "^4.3.1",
-"gh-pages": "^6.1.1",
-"vite": "^5.4.1"
-}
+  "name": "pmr-smanel-report",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "homepage": "https://pmrsmanel-ai.github.io/Report_System",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --base=/Report_System/",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "lucide-react": "^0.400.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.24",
+    "gh-pages": "^6.1.1",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "vite": "^5.4.1"
+  }
 }
