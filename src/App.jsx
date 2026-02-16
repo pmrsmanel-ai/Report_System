@@ -1,4 +1,3 @@
-import './index.css';
 import React, { useState } from 'react';
 import { 
   ClipboardCheck, 
@@ -18,7 +17,10 @@ import {
   Database
 } from 'lucide-react';
 
+// URL Google Apps Script Anda
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUPUmQkWTB9Ux1oivo98F4L3zESR6-DfUibI8CaE6qiwI_kSZdRafGwjou-HIo7iQd/exec"; 
+
+// --- SUB-KOMPONEN ---
 
 const Header = ({ view, setView }) => (
   <header className="bg-red-800 text-white p-4 md:p-6 shadow-2xl sticky top-0 z-50 border-b border-red-900">
@@ -51,7 +53,7 @@ const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
         <div className="bg-red-800 p-5 md:p-6 text-white flex justify-between items-center">
           <div className="pr-4">
             <h3 className="text-lg md:text-xl font-bold leading-tight line-clamp-1">{report.materi}</h3>
@@ -61,22 +63,22 @@ const DetailModal = ({ report, onClose }) => {
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
-        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto text-slate-900">
+        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto text-slate-900 scrollbar-thin">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Koordinator</p>
               <p className="font-bold text-slate-800">{report.nama}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Kehadiran</p>
               <p className="font-bold text-slate-800">{report.hadir} Anggota</p>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 text-left">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hasil Latihan</p>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{report.hasil}</div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-2 text-left">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kendala</p>
             <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-sm leading-relaxed text-slate-700">{report.kendala || "Tidak ada kendala."}</div>
           </div>
@@ -110,8 +112,8 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
-      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6">
-        <div className="bg-slate-900 text-white p-5 md:p-6">
+      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6 animate-in fade-in duration-500">
+        <div className="bg-slate-900 text-white p-5 md:p-6 text-left">
           <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-red-500" />
             Pelaporan Latihan Mingguan
@@ -182,7 +184,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
           </div>
 
           {status.message && (
-            <div className={`p-4 rounded-xl flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <p className="text-xs md:text-sm font-bold">{status.message}</p>
             </div>
@@ -199,7 +201,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
         <div className="bg-red-100 p-3 rounded-2xl flex-shrink-0">
           <Database className="text-red-700 w-6 h-6" />
         </div>
-        <div className="space-y-1 text-center sm:text-left text-slate-900">
+        <div className="space-y-1 text-center sm:text-left text-slate-900 text-left">
           <h4 className="text-xs md:text-sm font-black uppercase tracking-wider flex items-center justify-center sm:justify-start gap-2">
             Sinkronisasi Data
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -214,7 +216,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
 };
 
 const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
-  <div className="max-w-md mx-auto p-4 pt-12 md:pt-20 text-slate-900">
+  <div className="max-w-md mx-auto p-4 pt-12 md:pt-20 text-slate-900 animate-in zoom-in duration-300">
     <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
       <div className="text-center mb-8">
         <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -232,7 +234,7 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Password</label>
           <input required type="password" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="••••••••" />
         </div>
-        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic">{status.message}</p>}
+        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic text-left">{status.message}</p>}
         <button type="submit" className="w-full bg-red-800 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-lg uppercase tracking-widest text-sm">Masuk</button>
       </form>
     </div>
@@ -240,7 +242,7 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
 );
 
 const AdminView = ({ reports, setSelectedReport }) => (
-  <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900">
+  <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900 animate-in slide-in-from-bottom-4 duration-500">
     <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-2 md:mt-6">
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-blue-50 p-2 md:p-3 rounded-xl"><ClipboardCheck className="text-blue-600 w-5 h-5 md:w-6 md:h-6" /></div>
@@ -262,12 +264,12 @@ const AdminView = ({ reports, setSelectedReport }) => (
     
     <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 text-slate-900">
       <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight">
+        <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight text-left">
           <FileText className="text-red-800 w-5 h-5" /> REKAPITULASI
         </h2>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
+      <div className="overflow-x-auto scrollbar-thin">
+        <table className="w-full text-left min-w-[500px]">
           <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
             <tr>
               <th className="px-6 py-4">Koordinator</th>
@@ -278,11 +280,11 @@ const AdminView = ({ reports, setSelectedReport }) => (
           <tbody className="divide-y divide-slate-100">
             {reports.map((report) => (
               <tr key={report.id} className="hover:bg-slate-50 transition-colors group">
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 text-left">
                   <p className="font-bold text-slate-800 text-sm md:text-base">{report.nama}</p>
                   <p className="text-[9px] md:text-[10px] text-slate-400 uppercase font-black">{report.bidang}</p>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 text-left">
                   <p className="text-xs md:text-sm font-bold text-slate-700 line-clamp-1">{report.materi}</p>
                   <p className="text-[9px] text-slate-400 font-bold">{report.date}</p>
                 </td>
@@ -382,7 +384,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white">
+    <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white selection:bg-red-200 selection:text-red-900">
       <Header view={view} setView={setView} />
       
       <main className="w-full px-2 sm:px-0">
