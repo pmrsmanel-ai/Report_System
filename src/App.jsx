@@ -18,10 +18,7 @@ import {
   Database
 } from 'lucide-react';
 
-// URL Google Apps Script yang Anda berikan
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUPUmQkWTB9Ux1oivo98F4L3zESR6-DfUibI8CaE6qiwI_kSZdRafGwjou-HIo7iQd/exec"; 
-
-// --- SUB-COMPONENTS ---
 
 const Header = ({ view, setView }) => (
   <header className="bg-red-800 text-white p-4 md:p-6 shadow-2xl sticky top-0 z-50 border-b border-red-900">
@@ -53,8 +50,8 @@ const Header = ({ view, setView }) => (
 const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden">
         <div className="bg-red-800 p-5 md:p-6 text-white flex justify-between items-center">
           <div className="pr-4">
             <h3 className="text-lg md:text-xl font-bold leading-tight line-clamp-1">{report.materi}</h3>
@@ -64,7 +61,7 @@ const DetailModal = ({ report, onClose }) => {
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
-        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto text-slate-900 scrollbar-thin">
+        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto text-slate-900">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Koordinator</p>
@@ -112,7 +109,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
   const progressInfo = getProgressLabel(formData.persentase);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto p-4 space-y-6">
       <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6">
         <div className="bg-slate-900 text-white p-5 md:p-6">
           <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
@@ -123,11 +120,11 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
         </div>
         <form onSubmit={handleSubmit} className="p-5 md:p-8 space-y-6 text-slate-900">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="text-xs font-bold text-slate-700 uppercase">Nama Koordinator</label>
-              <input required type="text" name="namaKoordinator" value={formData.namaKoordinator} onChange={handleInputChange} placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none transition-all text-sm" />
+              <input required type="text" name="namaKoordinator" value={formData.namaKoordinator} onChange={handleInputChange} placeholder="Nama Lengkap" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none transition-all text-sm bg-white" />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="text-xs font-bold text-slate-700 uppercase">Bidang PMR</label>
               <select name="bidang" value={formData.bidang} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none bg-white transition-all text-sm">
                 <option value="Pertolongan Pertama">Pertolongan Pertama</option>
@@ -138,12 +135,12 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 text-left">
             <label className="text-xs font-bold text-slate-700 uppercase">Judul Materi</label>
-            <input required type="text" name="judulMateri" value={formData.judulMateri} onChange={handleInputChange} placeholder="Misal: Teknik Pembalutan Siku" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none transition-all text-sm" />
+            <input required type="text" name="judulMateri" value={formData.judulMateri} onChange={handleInputChange} placeholder="Misal: Teknik Pembalutan Siku" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none transition-all text-sm bg-white" />
           </div>
 
-          <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+          <div className="space-y-4 bg-slate-50 p-5 rounded-2xl border border-slate-100 text-left">
             <div className="flex justify-between items-center">
               <div className="flex flex-col">
                 <label className="text-xs font-bold text-slate-700 uppercase">Progres</label>
@@ -155,29 +152,24 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             <p className="text-[10px] text-slate-500 font-medium italic">* {progressInfo.desc}</p>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 text-left">
             <label className="text-xs font-bold text-slate-700 uppercase">Hasil Latihan Hari Ini</label>
-            <textarea required name="hasilLatihan" value={formData.hasilLatihan} onChange={handleInputChange} rows="3" placeholder="Apa saja target yang sudah dicapai?" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none resize-none text-sm"></textarea>
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-2 rounded-r-xl">
-              <p className="text-[9px] text-blue-700 font-medium leading-tight italic">
-                Laporkan poin materi yang diselesaikan, simulasi praktik, dan evaluasi pemahaman anggota.
-              </p>
-            </div>
+            <textarea required name="hasilLatihan" value={formData.hasilLatihan} onChange={handleInputChange} rows="3" placeholder="Apa saja target yang sudah dicapai?" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none resize-none text-sm bg-white"></textarea>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="text-xs font-bold text-slate-700 uppercase">Anggota Hadir</label>
               <div className="relative">
-                <input required type="number" name="jumlahHadir" value={formData.jumlahHadir} onChange={handleInputChange} placeholder="0" className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm" />
+                <input required type="number" name="jumlahHadir" value={formData.jumlahHadir} onChange={handleInputChange} placeholder="0" className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" />
                 <Users className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
               </div>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <label className="text-xs font-bold text-slate-700 uppercase">Dokumentasi</label>
               <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all overflow-hidden relative group">
                 {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className="h-full w-full object-cover p-1 transition-transform group-hover:scale-105" />
+                  <img src={photoPreview} alt="Preview" className="h-full w-full object-cover p-1" />
                 ) : (
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Camera className="w-8 h-8 text-slate-400 mb-2 group-hover:text-red-800 transition-colors" />
@@ -189,13 +181,8 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700 uppercase">Kendala Latihan</label>
-            <textarea name="kendala" value={formData.kendala} onChange={handleInputChange} rows="2" placeholder="Tulis '-' jika tidak ada kendala" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none resize-none text-sm"></textarea>
-          </div>
-
           {status.message && (
-            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm' : 'bg-red-50 text-red-800 border border-red-200 shadow-sm'}`}>
+            <div className={`p-4 rounded-xl flex items-center gap-3 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <p className="text-xs md:text-sm font-bold">{status.message}</p>
             </div>
@@ -208,7 +195,6 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
         </form>
       </section>
 
-      {/* Info Card Sinkronisasi */}
       <section className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/20 flex flex-col sm:flex-row items-center sm:items-start gap-4 transition-all hover:shadow-2xl hover:-translate-y-1">
         <div className="bg-red-100 p-3 rounded-2xl flex-shrink-0">
           <Database className="text-red-700 w-6 h-6" />
@@ -227,9 +213,8 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
   );
 };
 
-// --- LOGIN & ADMIN VIEWS ---
 const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
-  <div className="max-w-md mx-auto p-4 pt-12 md:pt-20 animate-in zoom-in duration-300 text-slate-900">
+  <div className="max-w-md mx-auto p-4 pt-12 md:pt-20 text-slate-900">
     <div className="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100">
       <div className="text-center mb-8">
         <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -239,13 +224,13 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1 opacity-60">Sistem Autentikasi Internal</p>
       </div>
       <form onSubmit={handleLogin} className="space-y-5">
-        <div className="space-y-2">
+        <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Username</label>
-          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm" placeholder="User" />
+          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="User" />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Password</label>
-          <input required type="password" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm" placeholder="••••••••" />
+          <input required type="password" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="••••••••" />
         </div>
         {status.type === 'error' && <p className="text-red-600 text-xs font-black italic">{status.message}</p>}
         <button type="submit" className="w-full bg-red-800 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-lg uppercase tracking-widest text-sm">Masuk</button>
@@ -255,21 +240,21 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
 );
 
 const AdminView = ({ reports, setSelectedReport }) => (
-  <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+  <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900">
     <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-2 md:mt-6">
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-slate-900">
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-blue-50 p-2 md:p-3 rounded-xl"><ClipboardCheck className="text-blue-600 w-5 h-5 md:w-6 md:h-6" /></div>
         <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Laporan</p><p className="text-lg md:text-2xl font-black text-slate-900">{reports.length}</p></div>
       </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-slate-900">
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-green-50 p-2 md:p-3 rounded-xl"><Target className="text-green-600 w-5 h-5 md:w-6 md:h-6" /></div>
         <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Efisiensi</p><p className="text-lg md:text-2xl font-black text-slate-900">94%</p></div>
       </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-slate-900">
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-purple-50 p-2 md:p-3 rounded-xl"><Users className="text-purple-600 w-5 h-5 md:w-6 md:h-6" /></div>
         <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Hadir</p><p className="text-lg md:text-2xl font-black text-slate-900">312</p></div>
       </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-slate-900">
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-red-50 p-2 md:p-3 rounded-xl"><BookOpen className="text-red-800 w-5 h-5 md:w-6 md:h-6" /></div>
         <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Bidang</p><p className="text-lg md:text-2xl font-black text-slate-900">4</p></div>
       </div>
@@ -312,8 +297,6 @@ const AdminView = ({ reports, setSelectedReport }) => (
     </section>
   </div>
 );
-
-// --- MAIN APP COMPONENT ---
 
 const App = () => {
   const [view, setView] = useState('form');
@@ -399,7 +382,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden selection:bg-red-200 selection:text-red-900">
+    <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white">
       <Header view={view} setView={setView} />
       
       <main className="w-full px-2 sm:px-0">
@@ -419,9 +402,9 @@ const App = () => {
           </div>
         </div>
 
-        <div className="space-y-1 pt-1">
+        <div className="space-y-1 pt-1 text-slate-300">
           <p className="text-[10px] font-black tracking-widest uppercase">Copyright by PMRSMANEL26</p>
-          <div className="flex items-center justify-center gap-2 text-[8px] font-bold text-red-300 opacity-60">
+          <div className="flex items-center justify-center gap-2 text-[8px] font-bold opacity-60">
             <span className="flex items-center gap-1"><Smartphone className="w-2 h-2" /> Ready</span>
             <div className="w-1 h-1 bg-red-400 rounded-full"></div>
             <span>Secured App</span>
