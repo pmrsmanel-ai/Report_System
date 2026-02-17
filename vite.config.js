@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   // Base path harus sama dengan nama repository GitHub Anda
-  base: '/Report_System/',
+  //base: '/Report_System/',
 })

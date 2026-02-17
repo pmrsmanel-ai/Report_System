@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ClipboardCheck, 
   Users, 
@@ -14,15 +14,18 @@ import {
   Camera,
   Smartphone,
   ShieldCheck,
-  Database
+  Database,
+  ChevronRight,
+  Info,
+  AlertTriangle // Icon baru untuk Kendala
 } from 'lucide-react';
 
-// URL Google Apps Script Anda
+// URL Google Apps Script (Sesuai kode asli Anda)
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUPUmQkWTB9Ux1oivo98F4L3zESR6-DfUibI8CaE6qiwI_kSZdRafGwjou-HIo7iQd/exec"; 
 
 // --- SUB-KOMPONEN ---
 
-const Header = ({ view, setView }) => (
+const Header = ({ view, setView, isLoggedIn }) => (
   <header className="bg-red-800 text-white p-4 md:p-6 shadow-2xl sticky top-0 z-50 border-b border-red-900">
     <div className="max-w-6xl mx-auto flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -36,12 +39,18 @@ const Header = ({ view, setView }) => (
       </div>
       <div className="flex gap-2">
         {view === 'form' ? (
-          <button onClick={() => setView('login')} className="flex items-center gap-2 bg-red-900 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-red-700">
+          <button 
+            onClick={() => setView('login')} 
+            className="flex items-center gap-2 bg-red-900 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-red-700"
+          >
             <LogIn className="w-4 h-4" /> <span className="hidden sm:inline">Admin</span>
           </button>
         ) : (
-          <button onClick={() => setView('form')} className="flex items-center gap-2 bg-white text-red-800 hover:bg-slate-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all shadow-md">
-            Kembali
+          <button 
+            onClick={() => setView(isLoggedIn ? 'admin' : 'form')} 
+            className="flex items-center gap-2 bg-white text-red-800 hover:bg-slate-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all shadow-md"
+          >
+            {isLoggedIn && view !== 'admin' ? 'Dashboard' : 'Kembali'}
           </button>
         )}
       </div>
@@ -52,7 +61,7 @@ const Header = ({ view, setView }) => (
 const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
         <div className="bg-red-800 p-5 md:p-6 text-white flex justify-between items-center">
           <div className="pr-4">
@@ -112,7 +121,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
-      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6 animate-in fade-in duration-500">
+      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="bg-slate-900 text-white p-5 md:p-6 text-left">
           <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-red-500" />
@@ -154,9 +163,18 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             <p className="text-[10px] text-slate-500 font-medium italic">* {progressInfo.desc}</p>
           </div>
 
+          {/* KOLOM HASIL LATIHAN */}
           <div className="space-y-1 text-left">
             <label className="text-xs font-bold text-slate-700 uppercase">Hasil Latihan Hari Ini</label>
             <textarea required name="hasilLatihan" value={formData.hasilLatihan} onChange={handleInputChange} rows="3" placeholder="Apa saja target yang sudah dicapai?" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none resize-none text-sm bg-white"></textarea>
+          </div>
+
+          {/* KOLOM KENDALA (BARU DITAMBAHKAN) */}
+          <div className="space-y-1 text-left">
+            <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3 text-amber-500" /> Kendala / Masalah
+            </label>
+            <textarea name="kendala" value={formData.kendala} onChange={handleInputChange} rows="2" placeholder="Tuliskan jika ada kendala atau kekurangan alat (Opsional)" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none resize-none text-sm bg-white"></textarea>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -184,7 +202,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
           </div>
 
           {status.message && (
-            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <p className="text-xs md:text-sm font-bold">{status.message}</p>
             </div>
@@ -197,17 +215,17 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
         </form>
       </section>
 
-      <section className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/20 flex flex-col sm:flex-row items-center sm:items-start gap-4 transition-all hover:shadow-2xl hover:-translate-y-1">
-        <div className="bg-red-100 p-3 rounded-2xl flex-shrink-0">
-          <Database className="text-red-700 w-6 h-6" />
+      <section className="bg-white/10 backdrop-blur-md rounded-3xl shadow-lg p-5 border border-white/20 flex flex-col sm:flex-row items-center sm:items-start gap-4 transition-all hover:bg-white/20">
+        <div className="bg-white/20 p-3 rounded-2xl flex-shrink-0">
+          <Database className="text-white w-6 h-6" />
         </div>
-        <div className="space-y-1 text-center sm:text-left text-slate-900 text-left">
+        <div className="space-y-1 text-center sm:text-left text-white">
           <h4 className="text-xs md:text-sm font-black uppercase tracking-wider flex items-center justify-center sm:justify-start gap-2">
             Sinkronisasi Data
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </h4>
-          <p className="text-[11px] md:text-xs text-slate-600 font-medium leading-relaxed">
-            Laporan tersinkronisasi secara <span className="text-red-700 font-bold italic">real-time</span> ke database internal <span className="font-bold">PMR SMAN 1 AIKMEL</span>.
+          <p className="text-[11px] md:text-xs text-red-100 font-medium leading-relaxed opacity-80">
+            Laporan tersinkronisasi secara <span className="text-white font-bold italic">real-time</span> ke database internal <span className="font-bold">PMR SMAN 1 AIKMEL</span>.
           </p>
         </div>
       </section>
@@ -228,13 +246,13 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
       <form onSubmit={handleLogin} className="space-y-5">
         <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Username</label>
-          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="User" />
+          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="Masukkan Username" />
         </div>
         <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Password</label>
           <input required type="password" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="••••••••" />
         </div>
-        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic text-left">{status.message}</p>}
+        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic text-left flex items-center gap-1"><Info className="w-3 h-3" /> {status.message}</p>}
         <button type="submit" className="w-full bg-red-800 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-lg uppercase tracking-widest text-sm">Masuk</button>
       </form>
     </div>
@@ -246,7 +264,7 @@ const AdminView = ({ reports, setSelectedReport }) => (
     <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-2 md:mt-6">
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-blue-50 p-2 md:p-3 rounded-xl"><ClipboardCheck className="text-blue-600 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Laporan</p><p className="text-lg md:text-2xl font-black text-slate-900">{reports.length}</p></div>
+        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Total Laporan</p><p className="text-lg md:text-2xl font-black text-slate-900">{reports.length}</p></div>
       </div>
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-green-50 p-2 md:p-3 rounded-xl"><Target className="text-green-600 w-5 h-5 md:w-6 md:h-6" /></div>
@@ -254,27 +272,27 @@ const AdminView = ({ reports, setSelectedReport }) => (
       </div>
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-purple-50 p-2 md:p-3 rounded-xl"><Users className="text-purple-600 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Hadir</p><p className="text-lg md:text-2xl font-black text-slate-900">312</p></div>
+        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Total Hadir</p><p className="text-lg md:text-2xl font-black text-slate-900">312</p></div>
       </div>
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
         <div className="bg-red-50 p-2 md:p-3 rounded-xl"><BookOpen className="text-red-800 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Bidang</p><p className="text-lg md:text-2xl font-black text-slate-900">4</p></div>
+        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Bidang Aktif</p><p className="text-lg md:text-2xl font-black text-slate-900">4</p></div>
       </div>
     </section>
     
     <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 text-slate-900">
       <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
         <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight text-left">
-          <FileText className="text-red-800 w-5 h-5" /> REKAPITULASI
+          <FileText className="text-red-800 w-5 h-5" /> REKAPITULASI LAPORAN
         </h2>
       </div>
       <div className="overflow-x-auto scrollbar-thin">
         <table className="w-full text-left min-w-[500px]">
-          <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+          <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
             <tr>
-              <th className="px-6 py-4">Koordinator</th>
-              <th className="px-6 py-4">Materi</th>
-              <th className="px-6 py-4 text-center">Aksi</th>
+              <th className="px-6 py-4">Koordinator / Bidang</th>
+              <th className="px-6 py-4">Materi & Waktu</th>
+              <th className="px-6 py-4 text-center">Tindakan</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -289,7 +307,12 @@ const AdminView = ({ reports, setSelectedReport }) => (
                   <p className="text-[9px] text-slate-400 font-bold">{report.date}</p>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => setSelectedReport(report)} className="bg-red-800 text-white hover:bg-black px-3 py-2 rounded-xl text-[9px] font-black transition-all uppercase shadow-sm">Detail</button>
+                  <button 
+                    onClick={() => setSelectedReport(report)} 
+                    className="bg-slate-100 text-slate-600 hover:bg-red-800 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all uppercase flex items-center gap-2 mx-auto"
+                  >
+                    Detail <ChevronRight className="w-3 h-3" />
+                  </button>
                 </td>
               </tr>
             ))}
@@ -324,7 +347,8 @@ const App = () => {
 
   const reports = [
     { id: 1, date: '16 Feb 2026', nama: 'Zulham Efendi', bidang: 'Tandu', materi: 'Simpul & Ikat Tandu Darurat', hadir: 18, progres: 85, hasil: 'Anggota sudah lancar membuat simpul mati dan pangkal.', kendala: 'Tali lapuh.', link: '#' },
-    { id: 2, date: '15 Feb 2026', nama: 'Siti Rohana', bidang: 'Pertolongan Pertama', materi: 'Pembalutan Mitella Siku', hadir: 22, progres: 100, hasil: 'Praktik pembalutan berhasil dilakukan.', kendala: 'Tidak ada.', link: '#' }
+    { id: 2, date: '15 Feb 2026', nama: 'Siti Rohana', bidang: 'Pertolongan Pertama', materi: 'Pembalutan Mitella Siku', hadir: 22, progres: 100, hasil: 'Praktik pembalutan berhasil dilakukan.', kendala: 'Tidak ada.', link: '#' },
+    { id: 3, date: '12 Feb 2026', nama: 'Budi Santoso', bidang: 'Perawatan Keluarga', materi: 'Teknik Mencuci Tangan Steril', hadir: 15, progres: 90, hasil: 'Seluruh anggota mempraktikkan 7 langkah cuci tangan.', kendala: 'Air terbatas.', link: '#' }
   ];
 
   const handleInputChange = (e) => {
@@ -367,17 +391,32 @@ const App = () => {
     setStatus({ type: '', message: '' });
     
     try {
+      // Menggunakan fetch dengan mode no-cors karena GAS sering memblokir CORS browser biasa
       await fetch(GAS_URL, {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData }),
       });
-      setStatus({ type: 'success', message: 'Laporan berhasil dikirim!' });
-      setFormData({ namaKoordinator: '', bidang: 'Pertolongan Pertama', judulMateri: '', persentase: 50, jumlahHadir: '', hasilLatihan: '', kendala: '', imageBase64: '', mimeType: '', fileName: '' });
+      
+      setStatus({ type: 'success', message: 'Laporan berhasil dikirim ke database!' });
+      // Reset form
+      setFormData({ 
+        namaKoordinator: '', 
+        bidang: 'Pertolongan Pertama', 
+        judulMateri: '', 
+        persentase: 50, 
+        jumlahHadir: '', 
+        hasilLatihan: '', 
+        kendala: '', 
+        imageBase64: '', 
+        mimeType: '', 
+        fileName: '' 
+      });
       setPhotoPreview(null);
     } catch (error) {
-      setStatus({ type: 'error', message: 'Gagal mengirim. Coba lagi.' });
+      console.error("Submission error:", error);
+      setStatus({ type: 'error', message: 'Gagal mengirim. Periksa koneksi atau URL Script.' });
     } finally {
       setLoading(false);
     }
@@ -385,31 +424,57 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white selection:bg-red-200 selection:text-red-900">
-      <Header view={view} setView={setView} />
+      <Header view={view} setView={setView} isLoggedIn={isLoggedIn} />
       
       <main className="w-full px-2 sm:px-0">
-        {view === 'form' && <FormView formData={formData} handleInputChange={handleInputChange} handleFileChange={handleFileChange} handleSubmit={handleSubmit} loading={loading} status={status} photoPreview={photoPreview} />}
-        {view === 'login' && <LoginView loginData={loginData} setLoginData={setLoginData} handleLogin={handleLogin} status={status} />}
-        {view === 'admin' && <AdminView reports={reports} setSelectedReport={setSelectedReport} />}
+        <div className="max-w-6xl mx-auto">
+          {view === 'form' && (
+            <FormView 
+              formData={formData} 
+              handleInputChange={handleInputChange} 
+              handleFileChange={handleFileChange} 
+              handleSubmit={handleSubmit} 
+              loading={loading} 
+              status={status} 
+              photoPreview={photoPreview} 
+            />
+          )}
+          
+          {view === 'login' && (
+            <LoginView 
+              loginData={loginData} 
+              setLoginData={setLoginData} 
+              handleLogin={handleLogin} 
+              status={status} 
+            />
+          )}
+          
+          {view === 'admin' && (
+            <AdminView 
+              reports={reports} 
+              setSelectedReport={setSelectedReport} 
+            />
+          )}
+        </div>
       </main>
       
       <DetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
 
-      <footer className="max-w-[280px] mx-auto text-center space-y-4 py-8 mt-8 px-4 border-t border-red-900/40 text-white/95">
+      <footer className="max-w-[280px] mx-auto text-center space-y-4 py-8 mt-12 px-4 border-t border-red-900/40 text-white/90">
         <div className="space-y-1.5">
           <p className="text-xs italic font-black tracking-widest uppercase">"Siamo Tutti Fratelli!"</p>
-          <div className="bg-red-900/30 py-1.5 px-3 rounded-xl inline-flex items-center gap-2 border border-red-800/20">
+          <div className="bg-red-900/40 py-1.5 px-3 rounded-xl inline-flex items-center gap-2 border border-red-800/20">
              <ShieldCheck className="w-3.5 h-3.5 text-green-400" />
-             <span className="text-[9px] font-black uppercase tracking-wider">v1.0 System</span>
+             <span className="text-[9px] font-black uppercase tracking-wider">System v1.0 • Stable</span>
           </div>
         </div>
 
-        <div className="space-y-1 pt-1 text-slate-300">
+        <div className="space-y-1 pt-1 text-red-200/60">
           <p className="text-[10px] font-black tracking-widest uppercase">Copyright by PMRSMANEL26</p>
-          <div className="flex items-center justify-center gap-2 text-[8px] font-bold opacity-60">
-            <span className="flex items-center gap-1"><Smartphone className="w-2 h-2" /> Ready</span>
-            <div className="w-1 h-1 bg-red-400 rounded-full"></div>
-            <span>Secured App</span>
+          <div className="flex items-center justify-center gap-2 text-[8px] font-bold">
+            <span className="flex items-center gap-1"><Smartphone className="w-2 h-2" /> Mobile Ready</span>
+            <div className="w-1 h-1 bg-red-400/40 rounded-full"></div>
+            <span>Encrypted App</span>
           </div>
         </div>
       </footer>
