@@ -33,7 +33,7 @@ const Header = ({ view, setView, isLoggedIn }) => (
           <Award className="text-red-800 w-5 h-5 md:w-6 md:h-6" />
         </div>
         <div>
-          <h1 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">REPORT SYSTEM</h1>
+          <h1 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">REPORT SYSTEM V1</h1>
           <p className="text-[9px] md:text-[10px] text-red-200 opacity-90 uppercase tracking-widest font-bold mt-1">PMR SMAN 1 AIKMEL</p>
         </div>
       </div>
