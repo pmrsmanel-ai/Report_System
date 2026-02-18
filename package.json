@@ -5,13 +5,11 @@
   "type": "module",
   "homepage": "https://pmrsmanel-ai.github.io/Report_System",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build --base=/Report_System/",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
-  },
+  "dev": "vite",
+  "build": "vite build", 
+  "lint": "eslint .",
+  "preview": "vite preview"
+},
   "dependencies": {
     "lucide-react": "^0.400.0",
     "react": "^18.3.1",
