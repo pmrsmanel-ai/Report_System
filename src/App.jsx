@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ClipboardCheck, 
   Users, 
@@ -17,11 +17,17 @@ import {
   Database,
   UserPlus,
   Trash2,
-  UserCheck
+  UserCheck,
+  RefreshCw,
+  Image as ImageIcon,
+  LogOut
 } from 'lucide-react';
 
-// URL Google Apps Script Anda
+// --- KONFIGURASI ---
+// URL Google Apps Script Anda (Gunakan versi yang mendukung multi-upload)
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUPUmQkWTB9Ux1oivo98F4L3zESR6-DfUibI8CaE6qiwI_kSZdRafGwjou-HIo7iQd/exec"; 
+// URL Cloudflare Worker Anda
+const CLOUDFLARE_ENDPOINT = "https://your-worker.your-subdomain.workers.dev";
 
 // --- SUB-KOMPONEN ---
 
@@ -46,7 +52,7 @@ const Header = ({ view, setView, isLoggedIn, onLogout }) => (
           <div className="flex gap-2">
             {isLoggedIn && (
                <button onClick={onLogout} className="flex items-center gap-2 bg-black/20 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-white/20">
-                Logout
+                <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Logout</span>
               </button>
             )}
             <button onClick={() => setView('form')} className="flex items-center gap-2 bg-white text-red-800 hover:bg-slate-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all shadow-md">
@@ -63,9 +69,9 @@ const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300 text-slate-900">
         <div className="bg-red-800 p-5 md:p-6 text-white flex justify-between items-center">
-          <div className="pr-4">
+          <div className="pr-4 text-left">
             <h3 className="text-lg md:text-xl font-bold leading-tight line-clamp-1">{report.materi}</h3>
             <p className="text-[10px] md:text-xs opacity-80 uppercase font-semibold">{report.bidang} • {report.date}</p>
           </div>
@@ -73,18 +79,18 @@ const DetailModal = ({ report, onClose }) => {
             <X className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
-        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto text-slate-900 scrollbar-thin">
+        <div className="p-6 md:p-8 space-y-6 max-h-[75vh] overflow-y-auto scrollbar-thin text-left">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Koordinator</p>
               <p className="font-bold text-slate-800">{report.nama}</p>
             </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-left">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Kehadiran</p>
               <p className="font-bold text-slate-800">{report.hadir} Anggota</p>
             </div>
           </div>
-          <div className="space-y-2 text-left">
+          <div className="space-y-2">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hasil Latihan</p>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{report.hasil}</div>
           </div>
@@ -96,8 +102,8 @@ const DetailModal = ({ report, onClose }) => {
               <span className="text-xs font-bold text-slate-500">{report.progres}% Tuntas</span>
             </div>
             {report.link && report.link !== "#" && (
-              <a href={report.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-red-800 font-bold text-sm hover:underline uppercase tracking-tighter w-full sm:w-auto justify-center sm:justify-end">
-                Dokumentasi Drive <ExternalLink className="w-4 h-4" />
+              <a href={report.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-red-800 font-bold text-sm hover:underline uppercase tracking-tighter w-full sm:w-auto justify-center sm:justify-end text-center">
+                Buka Dokumentasi <ExternalLink className="w-4 h-4" />
               </a>
             )}
           </div>
@@ -107,7 +113,7 @@ const DetailModal = ({ report, onClose }) => {
   );
 };
 
-const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit, loading, status, photoPreview }) => {
+const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit, loading, status, photoPreviews, removePhoto }) => {
   const getProgressLabel = (value) => {
     if (value <= 20) return { label: "Tahap Awal", desc: "Pengenalan materi & teori dasar." };
     if (value <= 40) return { label: "Tahap Dasar", desc: "Pemahaman teori & prosedur awal." };
@@ -175,19 +181,33 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
                 <Users className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
               </div>
             </div>
+            
             <div className="space-y-1 text-left">
-              <label className="text-xs font-bold text-slate-700 uppercase">Dokumentasi</label>
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all overflow-hidden relative group">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="Preview" className="h-full w-full object-cover p-1" />
-                ) : (
-                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                    <Camera className="w-8 h-8 text-slate-400 mb-2 group-hover:text-red-800 transition-colors" />
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Klik / Ambil Foto</p>
-                  </div>
-                )}
-                <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              <label className="text-xs font-bold text-slate-700 uppercase">Dokumentasi (Bisa {' > '} 1 Foto)</label>
+              <label className="flex flex-col items-center justify-center w-full min-h-[128px] border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all p-4">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <Camera className="w-8 h-8 text-slate-400 mb-2 group-hover:text-red-800 transition-colors" />
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight text-center">Pilih atau Ambil Foto Dokumentasi</p>
+                </div>
+                <input type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
               </label>
+
+              {photoPreviews.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-4">
+                  {photoPreviews.map((preview, idx) => (
+                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 shadow-sm group">
+                      <img src={preview} alt={`Dokumentasi ${idx}`} className="w-full h-full object-cover" />
+                      <button 
+                        type="button"
+                        onClick={() => removePhoto(idx)}
+                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -199,7 +219,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
           )}
 
           <button disabled={loading} type="submit" className={`w-full py-4 rounded-2xl font-black text-white flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95 ${loading ? 'bg-slate-400' : 'bg-red-800 hover:bg-red-900 shadow-red-200 uppercase tracking-[0.2em] text-sm'}`}>
-            {loading ? "Mengirim..." : "Kirim Laporan"}
+            {loading ? `Mengirim (${photoPreviews.length} Foto)...` : "Kirim Laporan"}
             {!loading && <Send className="w-4 h-4" />}
           </button>
         </form>
@@ -234,7 +254,7 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
   </div>
 );
 
-const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser }) => {
+const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser, isLoadingUsers, onRefreshUsers }) => {
   const [activeTab, setActiveTab] = useState('reports');
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'Admin' });
 
@@ -249,16 +269,10 @@ const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900 animate-in slide-in-from-bottom-4 duration-500">
       <section className="flex gap-4 border-b border-white/20 pb-2 overflow-x-auto scrollbar-hide">
-        <button 
-          onClick={() => setActiveTab('reports')} 
-          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'reports' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}
-        >
+        <button onClick={() => setActiveTab('reports')} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'reports' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}>
           Laporan
         </button>
-        <button 
-          onClick={() => setActiveTab('users')} 
-          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'users' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}
-        >
+        <button onClick={() => setActiveTab('users')} className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'users' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}>
           Manajemen User
         </button>
       </section>
@@ -272,11 +286,11 @@ const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser 
             </div>
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
               <div className="bg-green-50 p-2 md:p-3 rounded-xl"><Target className="text-green-600 w-5 h-5 md:w-6 md:h-6" /></div>
-              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Target</p><p className="text-lg md:text-2xl font-black text-slate-900">100%</p></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Efisiensi</p><p className="text-lg md:text-2xl font-black text-slate-900">100%</p></div>
             </div>
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
               <div className="bg-purple-50 p-2 md:p-3 rounded-xl"><Users className="text-purple-600 w-5 h-5 md:w-6 md:h-6" /></div>
-              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Anggota</p><p className="text-lg md:text-2xl font-black text-slate-900">Aktif</p></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Admin</p><p className="text-lg md:text-2xl font-black text-slate-900">{users.length}</p></div>
             </div>
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
               <div className="bg-red-50 p-2 md:p-3 rounded-xl"><BookOpen className="text-red-800 w-5 h-5 md:w-6 md:h-6" /></div>
@@ -329,60 +343,45 @@ const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser 
         </>
       ) : (
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Create User Form */}
           <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 h-fit">
             <h3 className="font-black text-slate-800 text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
-              <UserPlus className="text-red-800 w-5 h-5" /> Tambah Admin Baru
+              <UserPlus className="text-red-800 w-5 h-5" /> Tambah Admin
             </h3>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Username</label>
-                <input required type="text" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-800" placeholder="Username" />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block text-left">Username</label>
+                <input required type="text" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none" />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Password</label>
-                <input required type="password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-800" placeholder="••••••••" />
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block text-left">Password</label>
+                <input required type="password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none" />
               </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Role</label>
-                <select value={newUser.role} onChange={(e) => setNewUser({...newUser, role: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none bg-white">
-                  <option value="Admin">Admin</option>
-                  <option value="Super Admin">Super Admin</option>
-                </select>
-              </div>
-              <button type="submit" className="w-full py-3 bg-red-800 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-black transition-all">Simpan User</button>
+              <button disabled={isLoadingUsers} type="submit" className="w-full py-3 bg-red-800 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-black transition-all">
+                {isLoadingUsers ? "Memproses..." : "Simpan Admin"}
+              </button>
             </form>
           </div>
-
-          {/* User List */}
           <div className="lg:col-span-2 bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
              <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight">
-                <UserCheck className="text-red-800 w-5 h-5" /> DAFTAR USER AKTIF
+                <UserCheck className="text-red-800 w-5 h-5" /> DAFTAR USER
               </h2>
+              <button onClick={onRefreshUsers} className="p-2 hover:bg-slate-100 rounded-full transition-all">
+                <RefreshCw className={`w-4 h-4 text-slate-400 ${isLoadingUsers ? 'animate-spin' : ''}`} />
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
-                  <tr>
-                    <th className="px-6 py-4">Username</th>
-                    <th className="px-6 py-4">Role</th>
-                    <th className="px-6 py-4 text-center">Aksi</th>
-                  </tr>
+                  <tr><th className="px-6 py-4">Username</th><th className="px-6 py-4">Role</th><th className="px-6 py-4 text-center">Aksi</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {users.map((u, idx) => (
                     <tr key={idx} className="hover:bg-slate-50">
                       <td className="px-6 py-4 font-bold text-slate-800">{u.username}</td>
-                      <td className="px-6 py-4 uppercase text-[10px] font-black text-slate-500 tracking-tighter">{u.role}</td>
+                      <td className="px-6 py-4 uppercase text-[10px] font-black text-slate-500">{u.role}</td>
                       <td className="px-6 py-4 text-center">
-                        <button 
-                          disabled={users.length === 1}
-                          onClick={() => onDeleteUser(u.username)} 
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-20"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <button disabled={users.length === 1} onClick={() => onDeleteUser(u.username)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -404,28 +403,28 @@ const App = () => {
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
-  const [photoPreview, setPhotoPreview] = useState(null);
-  
-  // Fitur Manajemen User
-  const [users, setUsers] = useState([
-    { username: 'User', password: 'User', role: 'Super Admin' }
-  ]);
-
-  // Data Laporan (Mulai dari Kosong)
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [imagesData, setImagesData] = useState([]);
+  const [users, setUsers] = useState([{ username: 'User', password: 'User', role: 'Super Admin' }]);
   const [reports, setReports] = useState([]);
 
+  useEffect(() => { fetchUsers(); }, []);
+
+  const fetchUsers = async () => {
+    if (CLOUDFLARE_ENDPOINT.includes("your-worker")) return;
+    setIsLoadingUsers(true);
+    try {
+      const response = await fetch(`${CLOUDFLARE_ENDPOINT}/users`);
+      const data = await response.json();
+      if (data && data.length > 0) setUsers(data);
+    } catch (e) { console.error("Cloudflare Error:", e); }
+    finally { setIsLoadingUsers(false); }
+  };
+
   const [formData, setFormData] = useState({
-    namaKoordinator: '',
-    bidang: 'Pertolongan Pertama',
-    judulMateri: '',
-    persentase: 50,
-    jumlahHadir: '',
-    hasilLatihan: '',
-    kendala: '',
-    imageBase64: '',
-    mimeType: '',
-    fileName: ''
+    namaKoordinator: '', bidang: 'Pertolongan Pertama', judulMateri: '', persentase: 50, jumlahHadir: '', hasilLatihan: '', kendala: '',
   });
 
   const handleInputChange = (e) => {
@@ -434,120 +433,76 @@ const App = () => {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPhotoPreview(URL.createObjectURL(file));
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
       const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64String = event.target.result.split(',')[1];
-        setFormData(prev => ({ 
-          ...prev, 
-          imageBase64: base64String, 
-          mimeType: file.type, 
-          fileName: `PMR_SMANEL_${Date.now()}_${file.name}` 
-        }));
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        setPhotoPreviews(prev => [...prev, URL.createObjectURL(file)]);
+        setImagesData(prev => [...prev, { imageBase64: base64, mimeType: file.type, fileName: `PMR_${Date.now()}_${file.name}` }]);
       };
       reader.readAsDataURL(file);
-    }
+    });
+  };
+
+  const removePhoto = (idx) => {
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== idx));
+    setImagesData(prev => prev.filter((_, i) => i !== idx));
   };
 
   const handleLogin = (e) => {
     e.preventDefault();
-    const foundUser = users.find(u => u.username === loginData.username && u.password === loginData.password);
-    
-    if (foundUser) {
-      setIsLoggedIn(true);
-      setView('admin');
-      setStatus({ type: '', message: '' });
-    } else {
-      setStatus({ type: 'error', message: 'Kombinasi Username/Password salah!' });
+    const found = users.find(u => u.username === loginData.username && u.password === loginData.password);
+    if (found) { setIsLoggedIn(true); setView('admin'); setStatus({ type: '', message: '' }); }
+    else { setStatus({ type: 'error', message: 'Kombinasi salah!' }); }
+  };
+
+  const handleLogout = () => { setIsLoggedIn(false); setView('form'); };
+
+  const addUser = async (userData) => {
+    const newList = [...users, userData];
+    setUsers(newList);
+    if (!CLOUDFLARE_ENDPOINT.includes("your-worker")) {
+      try { await fetch(`${CLOUDFLARE_ENDPOINT}/users`, { method: 'POST', body: JSON.stringify({ action: 'add', user: userData }) }); } catch (e) {}
     }
   };
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setView('form');
-  };
-
-  const addUser = (userData) => {
-    setUsers([...users, userData]);
-    // Di aplikasi nyata, Anda akan menyimpan ini ke database
-  };
-
-  const deleteUser = (username) => {
-    setUsers(users.filter(u => u.username !== username));
+  const deleteUser = async (username) => {
+    const newList = users.filter(u => u.username !== username);
+    setUsers(newList);
+    if (!CLOUDFLARE_ENDPOINT.includes("your-worker")) {
+      try { await fetch(`${CLOUDFLARE_ENDPOINT}/users`, { method: 'POST', body: JSON.stringify({ action: 'delete', username }) }); } catch (e) {}
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setStatus({ type: '', message: '' });
-    
+    setLoading(true); setStatus({ type: '', message: '' });
     try {
-      // Logic pengiriman tetap sama ke GAS URL
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData }),
-      });
-      
-      setStatus({ type: 'success', message: 'Laporan berhasil dikirim ke database!' });
-      
-      // Update rekap lokal untuk sesi ini agar admin bisa langsung melihat
-      const newReport = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString(),
-        nama: formData.namaKoordinator,
-        bidang: formData.bidang,
-        materi: formData.judulMateri,
-        hadir: formData.jumlahHadir,
-        progres: formData.persentase,
-        hasil: formData.hasilLatihan,
-        link: "#"
-      };
-      setReports([newReport, ...reports]);
-
-      setFormData({ namaKoordinator: '', bidang: 'Pertolongan Pertama', judulMateri: '', persentase: 50, jumlahHadir: '', hasilLatihan: '', kendala: '', imageBase64: '', mimeType: '', fileName: '' });
-      setPhotoPreview(null);
-    } catch (error) {
-      setStatus({ type: 'error', message: 'Gagal mengirim. Periksa koneksi internet.' });
-    } finally {
-      setLoading(false);
-    }
+      await fetch(GAS_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ ...formData, photos: imagesData }) });
+      setStatus({ type: 'success', message: 'Laporan Terkirim!' });
+      setReports([{ id: Date.now(), date: new Date().toLocaleDateString(), nama: formData.namaKoordinator, bidang: formData.bidang, materi: formData.judulMateri, hadir: formData.jumlahHadir, progres: formData.persentase, hasil: formData.hasilLatihan, link: "#" }, ...reports]);
+      setFormData({ namaKoordinator: '', bidang: 'Pertolongan Pertama', judulMateri: '', persentase: 50, jumlahHadir: '', hasilLatihan: '', kendala: '' });
+      setPhotoPreviews([]); setImagesData([]);
+    } catch (err) { setStatus({ type: 'error', message: 'Gagal mengirim!' }); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white selection:bg-red-200 selection:text-red-900">
       <Header view={view} setView={setView} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
-      
       <main className="w-full px-2 sm:px-0">
-        {view === 'form' && <FormView formData={formData} handleInputChange={handleInputChange} handleFileChange={handleFileChange} handleSubmit={handleSubmit} loading={loading} status={status} photoPreview={photoPreview} />}
+        {view === 'form' && <FormView formData={formData} handleInputChange={handleInputChange} handleFileChange={handleFileChange} handleSubmit={handleSubmit} loading={loading} status={status} photoPreviews={photoPreviews} removePhoto={removePhoto} />}
         {view === 'login' && <LoginView loginData={loginData} setLoginData={setLoginData} handleLogin={handleLogin} status={status} />}
-        {view === 'admin' && (
-          <AdminView 
-            reports={reports} 
-            setSelectedReport={setSelectedReport} 
-            users={users} 
-            onAddUser={addUser} 
-            onDeleteUser={deleteUser} 
-          />
-        )}
+        {view === 'admin' && <AdminView reports={reports} setSelectedReport={setSelectedReport} users={users} onAddUser={addUser} onDeleteUser={deleteUser} isLoadingUsers={isLoadingUsers} onRefreshUsers={fetchUsers} />}
       </main>
-      
       <DetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
-
       <footer className="max-w-[280px] mx-auto text-center space-y-4 py-8 mt-8 px-4 border-t border-red-900/40 text-white/95">
         <div className="space-y-1.5">
           <p className="text-xs italic font-black tracking-widest uppercase">"Siamo Tutti Fratelli!"</p>
           <div className="bg-red-900/30 py-1.5 px-3 rounded-xl inline-flex items-center gap-2 border border-red-800/20">
-             <ShieldCheck className="w-3.5 h-3.5 text-green-400" />
-             <span className="text-[9px] font-black uppercase tracking-wider">v1.1 Advanced</span>
+             <ShieldCheck className="w-3.5 h-3.5 text-green-400" /><span className="text-[9px] font-black uppercase tracking-wider">v1.3 Complete</span>
           </div>
-        </div>
-
-        <div className="space-y-1 pt-1 text-slate-300">
-          <p className="text-[10px] font-black tracking-widest uppercase">Copyright by PMRSMANEL26</p>
         </div>
       </footer>
     </div>
