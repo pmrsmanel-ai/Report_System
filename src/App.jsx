@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ClipboardCheck, 
   Users, 
@@ -15,17 +15,17 @@ import {
   Smartphone,
   ShieldCheck,
   Database,
-  ChevronRight,
-  Info,
-  AlertTriangle // Icon baru untuk Kendala
+  UserPlus,
+  Trash2,
+  UserCheck
 } from 'lucide-react';
 
-// URL Google Apps Script (Sesuai kode asli Anda)
+// URL Google Apps Script Anda
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxUPUmQkWTB9Ux1oivo98F4L3zESR6-DfUibI8CaE6qiwI_kSZdRafGwjou-HIo7iQd/exec"; 
 
 // --- SUB-KOMPONEN ---
 
-const Header = ({ view, setView, isLoggedIn }) => (
+const Header = ({ view, setView, isLoggedIn, onLogout }) => (
   <header className="bg-red-800 text-white p-4 md:p-6 shadow-2xl sticky top-0 z-50 border-b border-red-900">
     <div className="max-w-6xl mx-auto flex items-center justify-between">
       <div className="flex items-center gap-3">
@@ -33,25 +33,26 @@ const Header = ({ view, setView, isLoggedIn }) => (
           <Award className="text-red-800 w-5 h-5 md:w-6 md:h-6" />
         </div>
         <div>
-          <h1 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">REPORT SYSTEM CLOUD</h1>
+          <h1 className="text-lg md:text-xl font-black tracking-tighter uppercase leading-none">REPORT SYSTEM</h1>
           <p className="text-[9px] md:text-[10px] text-red-200 opacity-90 uppercase tracking-widest font-bold mt-1">PMR SMAN 1 AIKMEL</p>
         </div>
       </div>
       <div className="flex gap-2">
         {view === 'form' ? (
-          <button 
-            onClick={() => setView('login')} 
-            className="flex items-center gap-2 bg-red-900 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-red-700"
-          >
+          <button onClick={() => setView('login')} className="flex items-center gap-2 bg-red-900 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-red-700">
             <LogIn className="w-4 h-4" /> <span className="hidden sm:inline">Admin</span>
           </button>
         ) : (
-          <button 
-            onClick={() => setView(isLoggedIn ? 'admin' : 'form')} 
-            className="flex items-center gap-2 bg-white text-red-800 hover:bg-slate-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all shadow-md"
-          >
-            {isLoggedIn && view !== 'admin' ? 'Dashboard' : 'Kembali'}
-          </button>
+          <div className="flex gap-2">
+            {isLoggedIn && (
+               <button onClick={onLogout} className="flex items-center gap-2 bg-black/20 hover:bg-black px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all border border-white/20">
+                Logout
+              </button>
+            )}
+            <button onClick={() => setView('form')} className="flex items-center gap-2 bg-white text-red-800 hover:bg-slate-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-bold transition-all shadow-md">
+              Formulir
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -61,7 +62,7 @@ const Header = ({ view, setView, isLoggedIn }) => (
 const DetailModal = ({ report, onClose }) => {
   if (!report) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
         <div className="bg-red-800 p-5 md:p-6 text-white flex justify-between items-center">
           <div className="pr-4">
@@ -87,10 +88,6 @@ const DetailModal = ({ report, onClose }) => {
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hasil Latihan</p>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-sm leading-relaxed whitespace-pre-wrap text-slate-700">{report.hasil}</div>
           </div>
-          <div className="space-y-2 text-left">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kendala</p>
-            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 text-sm leading-relaxed text-slate-700">{report.kendala || "Tidak ada kendala."}</div>
-          </div>
           <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-100 gap-4">
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -98,9 +95,11 @@ const DetailModal = ({ report, onClose }) => {
               </div>
               <span className="text-xs font-bold text-slate-500">{report.progres}% Tuntas</span>
             </div>
-            <a href={report.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-red-800 font-bold text-sm hover:underline uppercase tracking-tighter w-full sm:w-auto justify-center sm:justify-end">
-              Dokumentasi Drive <ExternalLink className="w-4 h-4" />
-            </a>
+            {report.link && report.link !== "#" && (
+              <a href={report.link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-red-800 font-bold text-sm hover:underline uppercase tracking-tighter w-full sm:w-auto justify-center sm:justify-end">
+                Dokumentasi Drive <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -121,7 +120,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
-      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 mt-2 sm:mt-6 animate-in fade-in duration-500">
         <div className="bg-slate-900 text-white p-5 md:p-6 text-left">
           <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-red-500" />
@@ -163,18 +162,9 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             <p className="text-[10px] text-slate-500 font-medium italic">* {progressInfo.desc}</p>
           </div>
 
-          {/* KOLOM HASIL LATIHAN */}
           <div className="space-y-1 text-left">
             <label className="text-xs font-bold text-slate-700 uppercase">Hasil Latihan Hari Ini</label>
             <textarea required name="hasilLatihan" value={formData.hasilLatihan} onChange={handleInputChange} rows="3" placeholder="Apa saja target yang sudah dicapai?" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none resize-none text-sm bg-white"></textarea>
-          </div>
-
-          {/* KOLOM KENDALA (BARU DITAMBAHKAN) */}
-          <div className="space-y-1 text-left">
-            <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-1">
-              <AlertTriangle className="w-3 h-3 text-amber-500" /> Kendala / Masalah
-            </label>
-            <textarea name="kendala" value={formData.kendala} onChange={handleInputChange} rows="2" placeholder="Tuliskan jika ada kendala atau kekurangan alat (Opsional)" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none resize-none text-sm bg-white"></textarea>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,7 +192,7 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
           </div>
 
           {status.message && (
-            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+            <div className={`p-4 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-2 ${status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
               <p className="text-xs md:text-sm font-bold">{status.message}</p>
             </div>
@@ -213,21 +203,6 @@ const FormView = ({ formData, handleInputChange, handleFileChange, handleSubmit,
             {!loading && <Send className="w-4 h-4" />}
           </button>
         </form>
-      </section>
-
-      <section className="bg-white/10 backdrop-blur-md rounded-3xl shadow-lg p-5 border border-white/20 flex flex-col sm:flex-row items-center sm:items-start gap-4 transition-all hover:bg-white/20">
-        <div className="bg-white/20 p-3 rounded-2xl flex-shrink-0">
-          <Database className="text-white w-6 h-6" />
-        </div>
-        <div className="space-y-1 text-center sm:text-left text-white">
-          <h4 className="text-xs md:text-sm font-black uppercase tracking-wider flex items-center justify-center sm:justify-start gap-2">
-            Sinkronisasi Data
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          </h4>
-          <p className="text-[11px] md:text-xs text-red-100 font-medium leading-relaxed opacity-80">
-            Laporan tersinkronisasi secara <span className="text-white font-bold italic">real-time</span> ke database internal <span className="font-bold">PMR SMAN 1 AIKMEL</span>.
-          </p>
-        </div>
       </section>
     </div>
   );
@@ -246,82 +221,182 @@ const LoginView = ({ loginData, setLoginData, handleLogin, status }) => (
       <form onSubmit={handleLogin} className="space-y-5">
         <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Username</label>
-          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="Masukkan Username" />
+          <input required type="text" value={loginData.username} onChange={(e) => setLoginData({...loginData, username: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="User" />
         </div>
         <div className="space-y-2 text-left">
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Password</label>
           <input required type="password" value={loginData.password} onChange={(e) => setLoginData({...loginData, password: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-red-800 outline-none text-sm bg-white" placeholder="••••••••" />
         </div>
-        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic text-left flex items-center gap-1"><Info className="w-3 h-3" /> {status.message}</p>}
+        {status.type === 'error' && <p className="text-red-600 text-xs font-black italic text-left">{status.message}</p>}
         <button type="submit" className="w-full bg-red-800 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-lg uppercase tracking-widest text-sm">Masuk</button>
       </form>
     </div>
   </div>
 );
 
-const AdminView = ({ reports, setSelectedReport }) => (
-  <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900 animate-in slide-in-from-bottom-4 duration-500">
-    <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-2 md:mt-6">
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
-        <div className="bg-blue-50 p-2 md:p-3 rounded-xl"><ClipboardCheck className="text-blue-600 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Total Laporan</p><p className="text-lg md:text-2xl font-black text-slate-900">{reports.length}</p></div>
-      </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
-        <div className="bg-green-50 p-2 md:p-3 rounded-xl"><Target className="text-green-600 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Efisiensi</p><p className="text-lg md:text-2xl font-black text-slate-900">94%</p></div>
-      </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
-        <div className="bg-purple-50 p-2 md:p-3 rounded-xl"><Users className="text-purple-600 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Total Hadir</p><p className="text-lg md:text-2xl font-black text-slate-900">312</p></div>
-      </div>
-      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
-        <div className="bg-red-50 p-2 md:p-3 rounded-xl"><BookOpen className="text-red-800 w-5 h-5 md:w-6 md:h-6" /></div>
-        <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Bidang Aktif</p><p className="text-lg md:text-2xl font-black text-slate-900">4</p></div>
-      </div>
-    </section>
-    
-    <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 text-slate-900">
-      <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-        <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight text-left">
-          <FileText className="text-red-800 w-5 h-5" /> REKAPITULASI LAPORAN
-        </h2>
-      </div>
-      <div className="overflow-x-auto scrollbar-thin">
-        <table className="w-full text-left min-w-[500px]">
-          <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-            <tr>
-              <th className="px-6 py-4">Koordinator / Bidang</th>
-              <th className="px-6 py-4">Materi & Waktu</th>
-              <th className="px-6 py-4 text-center">Tindakan</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {reports.map((report) => (
-              <tr key={report.id} className="hover:bg-slate-50 transition-colors group">
-                <td className="px-6 py-4 text-left">
-                  <p className="font-bold text-slate-800 text-sm md:text-base">{report.nama}</p>
-                  <p className="text-[9px] md:text-[10px] text-slate-400 uppercase font-black">{report.bidang}</p>
-                </td>
-                <td className="px-6 py-4 text-left">
-                  <p className="text-xs md:text-sm font-bold text-slate-700 line-clamp-1">{report.materi}</p>
-                  <p className="text-[9px] text-slate-400 font-bold">{report.date}</p>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <button 
-                    onClick={() => setSelectedReport(report)} 
-                    className="bg-slate-100 text-slate-600 hover:bg-red-800 hover:text-white px-4 py-2 rounded-xl text-[10px] font-black transition-all uppercase flex items-center gap-2 mx-auto"
-                  >
-                    Detail <ChevronRight className="w-3 h-3" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-);
+const AdminView = ({ reports, setSelectedReport, users, onAddUser, onDeleteUser }) => {
+  const [activeTab, setActiveTab] = useState('reports');
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'Admin' });
+
+  const handleCreateUser = (e) => {
+    e.preventDefault();
+    if (newUser.username && newUser.password) {
+      onAddUser(newUser);
+      setNewUser({ username: '', password: '', role: 'Admin' });
+    }
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-4 space-y-6 md:space-y-8 text-slate-900 animate-in slide-in-from-bottom-4 duration-500">
+      <section className="flex gap-4 border-b border-white/20 pb-2 overflow-x-auto scrollbar-hide">
+        <button 
+          onClick={() => setActiveTab('reports')} 
+          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'reports' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}
+        >
+          Laporan
+        </button>
+        <button 
+          onClick={() => setActiveTab('users')} 
+          className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'users' ? 'bg-white text-red-800 shadow-lg' : 'text-white/60 hover:text-white'}`}
+        >
+          Manajemen User
+        </button>
+      </section>
+
+      {activeTab === 'reports' ? (
+        <>
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
+              <div className="bg-blue-50 p-2 md:p-3 rounded-xl"><ClipboardCheck className="text-blue-600 w-5 h-5 md:w-6 md:h-6" /></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Total</p><p className="text-lg md:text-2xl font-black text-slate-900">{reports.length}</p></div>
+            </div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
+              <div className="bg-green-50 p-2 md:p-3 rounded-xl"><Target className="text-green-600 w-5 h-5 md:w-6 md:h-6" /></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Target</p><p className="text-lg md:text-2xl font-black text-slate-900">100%</p></div>
+            </div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
+              <div className="bg-purple-50 p-2 md:p-3 rounded-xl"><Users className="text-purple-600 w-5 h-5 md:w-6 md:h-6" /></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Anggota</p><p className="text-lg md:text-2xl font-black text-slate-900">Aktif</p></div>
+            </div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3 md:gap-4 text-left">
+              <div className="bg-red-50 p-2 md:p-3 rounded-xl"><BookOpen className="text-red-800 w-5 h-5 md:w-6 md:h-6" /></div>
+              <div><p className="text-slate-500 text-[8px] md:text-[10px] font-black uppercase tracking-wider">Bidang</p><p className="text-lg md:text-2xl font-black text-slate-900">4</p></div>
+            </div>
+          </section>
+          
+          <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100 text-slate-900">
+            <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight text-left">
+                <FileText className="text-red-800 w-5 h-5" /> REKAPITULASI LAPORAN
+              </h2>
+            </div>
+            <div className="overflow-x-auto scrollbar-thin">
+              {reports.length > 0 ? (
+                <table className="w-full text-left min-w-[500px]">
+                  <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+                    <tr>
+                      <th className="px-6 py-4">Koordinator</th>
+                      <th className="px-6 py-4">Materi</th>
+                      <th className="px-6 py-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {reports.map((report) => (
+                      <tr key={report.id} className="hover:bg-slate-50 transition-colors group">
+                        <td className="px-6 py-4 text-left">
+                          <p className="font-bold text-slate-800 text-sm md:text-base">{report.nama}</p>
+                          <p className="text-[9px] md:text-[10px] text-slate-400 uppercase font-black">{report.bidang}</p>
+                        </td>
+                        <td className="px-6 py-4 text-left">
+                          <p className="text-xs md:text-sm font-bold text-slate-700 line-clamp-1">{report.materi}</p>
+                          <p className="text-[9px] text-slate-400 font-bold">{report.date}</p>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button onClick={() => setSelectedReport(report)} className="bg-red-800 text-white hover:bg-black px-3 py-2 rounded-xl text-[9px] font-black transition-all uppercase shadow-sm">Detail</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-20 text-center text-slate-400 space-y-2">
+                  <Database className="w-12 h-12 mx-auto opacity-20" />
+                  <p className="font-bold italic uppercase text-xs tracking-widest">Belum ada data laporan yang masuk</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+      ) : (
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Create User Form */}
+          <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 h-fit">
+            <h3 className="font-black text-slate-800 text-xs uppercase tracking-widest mb-6 flex items-center gap-2">
+              <UserPlus className="text-red-800 w-5 h-5" /> Tambah Admin Baru
+            </h3>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Username</label>
+                <input required type="text" value={newUser.username} onChange={(e) => setNewUser({...newUser, username: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-800" placeholder="Username" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Password</label>
+                <input required type="password" value={newUser.password} onChange={(e) => setNewUser({...newUser, password: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-red-800" placeholder="••••••••" />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1 block">Role</label>
+                <select value={newUser.role} onChange={(e) => setNewUser({...newUser, role: e.target.value})} className="w-full px-4 py-2 text-sm rounded-xl border border-slate-200 outline-none bg-white">
+                  <option value="Admin">Admin</option>
+                  <option value="Super Admin">Super Admin</option>
+                </select>
+              </div>
+              <button type="submit" className="w-full py-3 bg-red-800 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-black transition-all">Simpan User</button>
+            </form>
+          </div>
+
+          {/* User List */}
+          <div className="lg:col-span-2 bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+             <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h2 className="font-black text-slate-800 flex items-center gap-2 text-sm md:text-base uppercase tracking-tight">
+                <UserCheck className="text-red-800 w-5 h-5" /> DAFTAR USER AKTIF
+              </h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+                  <tr>
+                    <th className="px-6 py-4">Username</th>
+                    <th className="px-6 py-4">Role</th>
+                    <th className="px-6 py-4 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.map((u, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 font-bold text-slate-800">{u.username}</td>
+                      <td className="px-6 py-4 uppercase text-[10px] font-black text-slate-500 tracking-tighter">{u.role}</td>
+                      <td className="px-6 py-4 text-center">
+                        <button 
+                          disabled={users.length === 1}
+                          onClick={() => onDeleteUser(u.username)} 
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-20"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      )}
+    </div>
+  );
+};
+
+// --- MAIN APP COMPONENT ---
 
 const App = () => {
   const [view, setView] = useState('form');
@@ -332,6 +407,14 @@ const App = () => {
   const [status, setStatus] = useState({ type: '', message: '' });
   const [photoPreview, setPhotoPreview] = useState(null);
   
+  // Fitur Manajemen User
+  const [users, setUsers] = useState([
+    { username: 'User', password: 'User', role: 'Super Admin' }
+  ]);
+
+  // Data Laporan (Mulai dari Kosong)
+  const [reports, setReports] = useState([]);
+
   const [formData, setFormData] = useState({
     namaKoordinator: '',
     bidang: 'Pertolongan Pertama',
@@ -344,12 +427,6 @@ const App = () => {
     mimeType: '',
     fileName: ''
   });
-
-  const reports = [
-    { id: 1, date: '16 Feb 2026', nama: 'Zulham Efendi', bidang: 'Tandu', materi: 'Simpul & Ikat Tandu Darurat', hadir: 18, progres: 85, hasil: 'Anggota sudah lancar membuat simpul mati dan pangkal.', kendala: 'Tali lapuh.', link: '#' },
-    { id: 2, date: '15 Feb 2026', nama: 'Siti Rohana', bidang: 'Pertolongan Pertama', materi: 'Pembalutan Mitella Siku', hadir: 22, progres: 100, hasil: 'Praktik pembalutan berhasil dilakukan.', kendala: 'Tidak ada.', link: '#' },
-    { id: 3, date: '12 Feb 2026', nama: 'Budi Santoso', bidang: 'Perawatan Keluarga', materi: 'Teknik Mencuci Tangan Steril', hadir: 15, progres: 90, hasil: 'Seluruh anggota mempraktikkan 7 langkah cuci tangan.', kendala: 'Air terbatas.', link: '#' }
-  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -376,13 +453,29 @@ const App = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (loginData.username === 'User' && loginData.password === 'User') {
+    const foundUser = users.find(u => u.username === loginData.username && u.password === loginData.password);
+    
+    if (foundUser) {
       setIsLoggedIn(true);
       setView('admin');
       setStatus({ type: '', message: '' });
     } else {
-      setStatus({ type: 'error', message: 'Kombinasi User/Password salah!' });
+      setStatus({ type: 'error', message: 'Kombinasi Username/Password salah!' });
     }
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setView('form');
+  };
+
+  const addUser = (userData) => {
+    setUsers([...users, userData]);
+    // Di aplikasi nyata, Anda akan menyimpan ini ke database
+  };
+
+  const deleteUser = (username) => {
+    setUsers(users.filter(u => u.username !== username));
   };
 
   const handleSubmit = async (e) => {
@@ -391,7 +484,7 @@ const App = () => {
     setStatus({ type: '', message: '' });
     
     try {
-      // Menggunakan fetch dengan mode no-cors karena GAS sering memblokir CORS browser biasa
+      // Logic pengiriman tetap sama ke GAS URL
       await fetch(GAS_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -400,23 +493,25 @@ const App = () => {
       });
       
       setStatus({ type: 'success', message: 'Laporan berhasil dikirim ke database!' });
-      // Reset form
-      setFormData({ 
-        namaKoordinator: '', 
-        bidang: 'Pertolongan Pertama', 
-        judulMateri: '', 
-        persentase: 50, 
-        jumlahHadir: '', 
-        hasilLatihan: '', 
-        kendala: '', 
-        imageBase64: '', 
-        mimeType: '', 
-        fileName: '' 
-      });
+      
+      // Update rekap lokal untuk sesi ini agar admin bisa langsung melihat
+      const newReport = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        nama: formData.namaKoordinator,
+        bidang: formData.bidang,
+        materi: formData.judulMateri,
+        hadir: formData.jumlahHadir,
+        progres: formData.persentase,
+        hasil: formData.hasilLatihan,
+        link: "#"
+      };
+      setReports([newReport, ...reports]);
+
+      setFormData({ namaKoordinator: '', bidang: 'Pertolongan Pertama', judulMateri: '', persentase: 50, jumlahHadir: '', hasilLatihan: '', kendala: '', imageBase64: '', mimeType: '', fileName: '' });
       setPhotoPreview(null);
     } catch (error) {
-      console.error("Submission error:", error);
-      setStatus({ type: 'error', message: 'Gagal mengirim. Periksa koneksi atau URL Script.' });
+      setStatus({ type: 'error', message: 'Gagal mengirim. Periksa koneksi internet.' });
     } finally {
       setLoading(false);
     }
@@ -424,58 +519,35 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#5a0505] font-sans pb-12 overflow-x-hidden text-white selection:bg-red-200 selection:text-red-900">
-      <Header view={view} setView={setView} isLoggedIn={isLoggedIn} />
+      <Header view={view} setView={setView} isLoggedIn={isLoggedIn} onLogout={handleLogout} />
       
       <main className="w-full px-2 sm:px-0">
-        <div className="max-w-6xl mx-auto">
-          {view === 'form' && (
-            <FormView 
-              formData={formData} 
-              handleInputChange={handleInputChange} 
-              handleFileChange={handleFileChange} 
-              handleSubmit={handleSubmit} 
-              loading={loading} 
-              status={status} 
-              photoPreview={photoPreview} 
-            />
-          )}
-          
-          {view === 'login' && (
-            <LoginView 
-              loginData={loginData} 
-              setLoginData={setLoginData} 
-              handleLogin={handleLogin} 
-              status={status} 
-            />
-          )}
-          
-          {view === 'admin' && (
-            <AdminView 
-              reports={reports} 
-              setSelectedReport={setSelectedReport} 
-            />
-          )}
-        </div>
+        {view === 'form' && <FormView formData={formData} handleInputChange={handleInputChange} handleFileChange={handleFileChange} handleSubmit={handleSubmit} loading={loading} status={status} photoPreview={photoPreview} />}
+        {view === 'login' && <LoginView loginData={loginData} setLoginData={setLoginData} handleLogin={handleLogin} status={status} />}
+        {view === 'admin' && (
+          <AdminView 
+            reports={reports} 
+            setSelectedReport={setSelectedReport} 
+            users={users} 
+            onAddUser={addUser} 
+            onDeleteUser={deleteUser} 
+          />
+        )}
       </main>
       
       <DetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
 
-      <footer className="max-w-[280px] mx-auto text-center space-y-4 py-8 mt-12 px-4 border-t border-red-900/40 text-white/90">
+      <footer className="max-w-[280px] mx-auto text-center space-y-4 py-8 mt-8 px-4 border-t border-red-900/40 text-white/95">
         <div className="space-y-1.5">
           <p className="text-xs italic font-black tracking-widest uppercase">"Siamo Tutti Fratelli!"</p>
-          <div className="bg-red-900/40 py-1.5 px-3 rounded-xl inline-flex items-center gap-2 border border-red-800/20">
+          <div className="bg-red-900/30 py-1.5 px-3 rounded-xl inline-flex items-center gap-2 border border-red-800/20">
              <ShieldCheck className="w-3.5 h-3.5 text-green-400" />
-             <span className="text-[9px] font-black uppercase tracking-wider">System v1.0 • Stable</span>
+             <span className="text-[9px] font-black uppercase tracking-wider">v1.1 Advanced</span>
           </div>
         </div>
 
-        <div className="space-y-1 pt-1 text-red-200/60">
+        <div className="space-y-1 pt-1 text-slate-300">
           <p className="text-[10px] font-black tracking-widest uppercase">Copyright by PMRSMANEL26</p>
-          <div className="flex items-center justify-center gap-2 text-[8px] font-bold">
-            <span className="flex items-center gap-1"><Smartphone className="w-2 h-2" /> Mobile Ready</span>
-            <div className="w-1 h-1 bg-red-400/40 rounded-full"></div>
-            <span>Encrypted App</span>
-          </div>
         </div>
       </footer>
     </div>
