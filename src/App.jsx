@@ -3,7 +3,7 @@ import {
   PlusSquare, Lock, LogOut, Edit, Search, Settings, 
   Bot, FileText, Printer, Send, CheckCircle, XCircle, 
   Clock, Camera, Image as ImageIcon, Check, X, AlertTriangle,
-  Users, Activity
+  Users, Activity, Trash2
 } from 'lucide-react';
 
 const INITIAL_MOCK_DATA = [
@@ -243,6 +243,34 @@ export default function App() {
       } catch (error) {
         console.warn('Mode Preview: Update API diblokir, memperbarui secara lokal.', error);
         showNotif(`Mode Lokal: Laporan ditandai sebagai ${status}`, status === 'Disetujui' ? 'bg-emerald-500' : 'bg-red-600');
+      }
+    }
+  };
+
+  const handleDeleteReport = async (id) => {
+    const confirmed = await showModalPromise({
+      title: 'Hapus Laporan',
+      message: 'Apakah Anda yakin ingin menghapus laporan ini secara permanen? Data yang dihapus juga akan hilang dari database.',
+      type: 'confirm'
+    });
+
+    if (confirmed) {
+      // Update UI seketika
+      setReports(prev => prev.filter(r => r.id !== id));
+      
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
+          body: JSON.stringify({ action: 'delete', id: id })
+        });
+        if (!response.ok) throw new Error('API Error');
+        showNotif('Laporan berhasil dihapus secara permanen.', 'bg-slate-800');
+      } catch (error) {
+        console.warn('Mode Preview: Delete API diblokir, menghapus secara lokal.', error);
+        showNotif('Mode Lokal: Laporan berhasil dihapus', 'bg-slate-800');
       }
     }
   };
@@ -718,15 +746,16 @@ export default function App() {
                       <td className="p-5">
                         <div className="text-sm font-bold text-slate-700">{row.jenis}</div>
                         <div className="text-xs font-medium text-slate-400 mt-1 mb-2">{row.tanggal}</div>
-                        {row.dokumentasi !== '-' && (
+                        {row.dokumentasi && row.dokumentasi !== '-' && (
                            <a href={row.dokumentasi} target="_blank" rel="noreferrer" className="inline-flex items-center text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"><ImageIcon size={14} className="mr-1.5"/> Buka Foto</a>
                         )}
                       </td>
                       <td className="p-5">{renderStatusBadge(row.status)}</td>
                       <td className="p-5 text-center whitespace-nowrap">
                         <div className="flex justify-center space-x-2">
-                          <button onClick={() => handleUbahStatus(row.id, 'Disetujui')} className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-all border border-emerald-100 hover:shadow-md hover:-translate-y-0.5" title="Setujui"><Check size={18} strokeWidth={3}/></button>
-                          <button onClick={() => handleUbahStatus(row.id, 'Revisi')} className="p-2.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-red-100 hover:shadow-md hover:-translate-y-0.5" title="Revisi"><X size={18} strokeWidth={3}/></button>
+                          <button onClick={() => handleUbahStatus(row.id, 'Disetujui')} className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl transition-all border border-emerald-100 hover:shadow-md hover:-translate-y-0.5" title="Setujui"><Check size={18} strokeWidth={2.5}/></button>
+                          <button onClick={() => handleUbahStatus(row.id, 'Revisi')} className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded-xl transition-all border border-rose-100 hover:shadow-md hover:-translate-y-0.5" title="Revisi"><X size={18} strokeWidth={2.5}/></button>
+                          <button onClick={() => handleDeleteReport(row.id)} className="p-2 bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white rounded-xl transition-all border border-slate-200 hover:shadow-md hover:-translate-y-0.5" title="Hapus"><Trash2 size={18} strokeWidth={2.5}/></button>
                         </div>
                       </td>
                     </tr>
@@ -767,7 +796,6 @@ export default function App() {
                   <button onClick={exportHTMLToWord} className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3.5 rounded-2xl shadow-lg shadow-blue-600/20 flex items-center transition-all hover:-translate-y-1">
                     <FileText className="mr-2.5" size={20}/> Unduh .DOC
                   </button>
-                  {/* Tombol Cetak PDF yang diubah menggunakan handlePrint */}
                   <button onClick={handlePrint} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold px-6 py-3.5 rounded-2xl shadow-sm flex items-center transition-all hover:-translate-y-1">
                     <Printer className="mr-2.5" size={20}/> Cetak PDF
                   </button>
@@ -841,7 +869,7 @@ export default function App() {
                                 </div>
                             </div>
 
-                            {lap.dokumentasi !== '-' && (
+                            {lap.dokumentasi && lap.dokumentasi !== '-' && (
                                <div className="mt-5 pt-5 border-t border-slate-200/60">
                                  <a href={lap.dokumentasi} target="_blank" rel="noreferrer" className="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline"><Camera size={16} className="mr-2"/> Lihat Dokumentasi</a>
                                </div>
