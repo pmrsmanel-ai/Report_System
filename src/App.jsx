@@ -6,18 +6,8 @@ import {
   Users, Activity, Trash2
 } from 'lucide-react';
 
-const INITIAL_MOCK_DATA = [
-  {
-    id: 'LAP-1', minggu: '1', bidang: 'Pertolongan Pertama', jenis: 'Latihan Rutin', 
-    tanggal: '2026-04-19', status: 'Disetujui', deskripsi: 'Latihan dasar pembalutan luka pendarahan luar.', 
-    jumlah: '15', kendala: 'Tidak ada kendala', dokumentasi: '-'
-  },
-  {
-    id: 'LAP-2', minggu: '1', bidang: 'Perawatan Keluarga', jenis: 'Rapat/Evaluasi', 
-    tanggal: '2026-04-18', status: 'Menunggu', deskripsi: 'Rapat penyusunan proker PK semester genap.', 
-    jumlah: '10', kendala: 'Waktu pertemuan terbatas, banyak yang izin', dokumentasi: '-'
-  }
-];
+// Mengosongkan data dummy
+const INITIAL_MOCK_DATA = [];
 
 export default function App() {
   // --- STATE MANAGEMENT ---
@@ -743,7 +733,7 @@ export default function App() {
                       <td className="p-4 sm:p-5">
                         <div className="text-xs sm:text-sm font-bold text-slate-700 leading-tight">{row.jenis}</div>
                         <div className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1 mb-1.5 sm:mb-2">{row.tanggal}</div>
-                        {row.dokumentasi !== '-' && (
+                        {row.dokumentasi && row.dokumentasi !== '-' && (
                            <a href={row.dokumentasi} target="_blank" rel="noreferrer" className="inline-flex items-center text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-blue-100 transition-colors"><ImageIcon size={12} className="mr-1 sm:mr-1.5"/> Foto</a>
                         )}
                       </td>
