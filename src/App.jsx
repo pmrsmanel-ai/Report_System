@@ -3,7 +3,7 @@ import {
   PlusSquare, Lock, LogOut, Edit, Search, Settings, 
   Bot, FileText, Printer, Send, CheckCircle, XCircle, 
   Clock, Camera, Image as ImageIcon, Check, X, AlertTriangle,
-  Users, Activity, Trash2
+  Users, Activity, Trash2, Eye
 } from 'lucide-react';
 
 // Mengosongkan data dummy
@@ -20,6 +20,9 @@ export default function App() {
   const [notif, setNotif] = useState({ isOpen: false, message: '', bgColor: '' });
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'alert', resolve: null });
   const [modalInput, setModalInput] = useState('');
+  
+  // Detail View Report State
+  const [selectedReport, setSelectedReport] = useState(null);
 
   // AI & Export State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -45,23 +48,22 @@ export default function App() {
       const data = await response.json();
       
       const formattedData = data.map(d => ({
-        id: d['ID Laporan'],
-        minggu: d['Minggu Ke'],
-        bidang: d['Nama Bidang'],
-        jenis: d['Jenis Kegiatan'],
-        tanggal: d['Tanggal Kegiatan'],
-        status: d['Status'],
-        deskripsi: d['Deskripsi Kegiatan'],
-        jumlah: d['Jumlah Anggota Terlibat'],
-        kendala: d['Kendala'],
-        dokumentasi: d['Dokumentasi']
+        id: d['ID Laporan'] || '-',
+        minggu: d['Minggu Ke'] || d['Minggu'] || '-', // Mengatasi jika kolom "Minggu Ke" tidak terbaca
+        bidang: d['Nama Bidang'] || '-',
+        jenis: d['Jenis Kegiatan'] || '-',
+        tanggal: d['Tanggal Kegiatan'] || d['Tanggal'] || '', // Mengatasi jika kolom "Tanggal" kosong
+        status: d['Status'] || 'Menunggu',
+        deskripsi: d['Deskripsi Kegiatan'] || '-',
+        jumlah: d['Jumlah Anggota Terlibat'] || '0',
+        kendala: d['Kendala'] || '-',
+        dokumentasi: d['Dokumentasi'] || '-'
       }));
       if (formattedData.length > 0) {
         setReports(formattedData);
       }
     } catch (error) {
       console.warn('Mode Preview: API diblokir oleh CORS/Sandbox, menggunakan data simulasi lokal.', error);
-      // Fallback jika API gagal dimuat (CORS/Sandbox)
       setReports(INITIAL_MOCK_DATA);
     } finally {
       setIsLoadingData(false);
@@ -191,7 +193,6 @@ export default function App() {
     } catch (error) {
       console.warn('Mode Preview: Menyimpan data secara lokal (Server diblokir CORS)', error);
       
-      // Fallback lokal jika fetch ke Google Apps Script diblokir oleh iframe/CORS
       const newReport = {
         id: 'LAP-' + Date.now(),
         ...payload,
@@ -217,7 +218,6 @@ export default function App() {
     });
 
     if (confirmed) {
-      // Update UI seketika
       setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
       
       try {
@@ -245,7 +245,6 @@ export default function App() {
     });
 
     if (confirmed) {
-      // Update UI seketika
       setReports(prev => prev.filter(r => r.id !== id));
       
       try {
@@ -279,9 +278,8 @@ export default function App() {
     let totalAnggota = 0;
     let daftarKendala = [];
 
-    // Membuat baris detail kegiatan secara dinamis berdasarkan jumlah laporan yang masuk
     const detailKegiatanRows = approvedReports.map(r => {
-      listMinggu.add(r.minggu);
+      listMinggu.add(r.minggu || '-');
       totalAnggota += parseInt(r.jumlah) || 0;
       if (r.kendala && r.kendala !== '-') {
         daftarKendala.push(`<b>${r.bidang}</b>: ${r.kendala}`);
@@ -304,7 +302,6 @@ export default function App() {
         ? daftarKendala.join('<br/>') 
         : 'Seluruh kegiatan dari masing-masing bidang berjalan lancar tanpa kendala yang berarti.';
 
-    // Menyusun teks laporan secara dinamis berdasarkan data yang masuk
     const ringkasanDinamis = `Alhamdulillah, kegiatan ekstrakurikuler PMR pada minggu ke-${arrayMinggu} telah terlaksana dengan melibatkan bidang ${bidangList}. Fokus utama kegiatan minggu ini meliputi <b>${jenisList}</b>. Tingkat partisipasi anggota sangat baik dengan total kehadiran mencapai <b>${totalAnggota} orang</b> secara keseluruhan.`;
     
     const hasilDinamis = approvedReports.map(r => `<div style="margin-bottom: 4px;">- <b>${r.bidang}</b> berhasil melaksanakan kegiatan dengan partisipasi ${r.jumlah} anggota.</div>`).join('');
@@ -468,7 +465,7 @@ export default function App() {
       {/* BACKGROUND DECORATIONS (Solid Dots Only) */}
       <div className="fixed inset-0 bg-dotted z-0 pointer-events-none"></div>
 
-      {/* --- MODAL --- */}
+      {/* --- MODAL GLOBAL --- */}
       {modal.isOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 no-print">
           <div className="bg-white p-6 sm:p-10 rounded-3xl sm:rounded-[2rem] shadow-2xl max-w-sm w-full animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -487,6 +484,64 @@ export default function App() {
                 <button onClick={handleModalCancel} className="w-full sm:w-auto px-5 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl sm:rounded-2xl hover:bg-slate-200 transition-colors">Batal</button>
               )}
               <button onClick={handleModalConfirm} className="w-full sm:w-auto px-5 py-3 bg-[#b10d11] text-white font-bold rounded-xl sm:rounded-2xl hover:bg-[#8c0a0d] shadow-lg shadow-[#b10d11]/25 transition-all hover:-translate-y-0.5">Lanjutkan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DETAIL LAPORAN (VIEW REPORT) --- */}
+      {selectedReport && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200 no-print">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl sm:rounded-[2rem] shadow-2xl max-w-lg w-full animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">Detail Lengkap</h3>
+              <button onClick={() => setSelectedReport(null)} className="p-2 bg-slate-50 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"><X size={20}/></button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-2xl">
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Bidang</span>
+                  <span className="font-bold text-[#b10d11] text-sm sm:text-base">{selectedReport.bidang}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-2xl">
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Jenis Kegiatan</span>
+                  <span className="font-bold text-slate-700 text-sm sm:text-base">{selectedReport.jenis}</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-2xl">
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Waktu Pelaksanaan</span>
+                  <span className="font-bold text-slate-700 text-sm sm:text-base">Minggu ke-{selectedReport.minggu || '-'}</span>
+                  <span className="block text-xs font-semibold text-slate-500 mt-0.5">{selectedReport.tanggal || 'Belum diatur'}</span>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-2xl">
+                  <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Kehadiran Anggota</span>
+                  <span className="font-bold text-slate-700 text-sm sm:text-base">{selectedReport.jumlah} <span className="text-xs font-medium text-slate-500">Orang</span></span>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-2xl">
+                <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Deskripsi Kegiatan</span>
+                <p className="text-sm text-slate-700 leading-relaxed font-medium">{selectedReport.deskripsi}</p>
+              </div>
+
+              <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
+                <span className="text-[10px] sm:text-xs font-bold text-red-400 uppercase tracking-wider block mb-1.5 flex items-center"><AlertTriangle size={12} className="mr-1.5"/> Kendala Lapangan</span>
+                <p className="text-sm font-bold text-[#b10d11] leading-relaxed">{selectedReport.kendala}</p>
+              </div>
+
+              {selectedReport.dokumentasi && selectedReport.dokumentasi !== '-' && (
+                <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+                  <span className="text-xs font-bold text-blue-800 flex items-center"><Camera size={16} className="mr-2"/> Bukti Terlampir</span>
+                  <a href={selectedReport.dokumentasi} target="_blank" rel="noreferrer" className="w-full sm:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors text-center">Buka File Dokumentasi</a>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 pt-5 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setSelectedReport(null)} className="w-full px-5 py-3.5 bg-slate-900 text-white font-bold rounded-xl sm:rounded-2xl hover:bg-slate-800 transition-colors shadow-md shadow-slate-900/20">Tutup Detail</button>
             </div>
           </div>
         </div>
@@ -672,8 +727,8 @@ export default function App() {
                   ) : reports.filter(r => filterBidang === 'Semua' || r.bidang === filterBidang).map(row => (
                     <tr key={row.id} className="hover:bg-slate-50 transition-colors group">
                       <td className="p-4 sm:p-5 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 text-xs sm:text-sm">Minggu {row.minggu}</div>
-                        <div className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1 flex items-center"><Clock size={10} className="mr-1"/> {row.tanggal}</div>
+                        <div className="font-bold text-slate-800 text-xs sm:text-sm">Minggu {row.minggu || '-'}</div>
+                        <div className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1 flex items-center"><Clock size={10} className="mr-1"/> {row.tanggal || 'Belum diatur'}</div>
                       </td>
                       <td className="p-4 sm:p-5 font-bold text-[#b10d11] text-xs sm:text-sm">{row.bidang}</td>
                       <td className="p-4 sm:p-5 text-xs sm:text-sm font-medium text-slate-600">{row.jenis}</td>
@@ -728,18 +783,16 @@ export default function App() {
                     </tr>
                   ) : reports.map(row => (
                     <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 sm:p-5 font-bold text-slate-800 text-xs sm:text-sm whitespace-nowrap">Mg ke-{row.minggu}</td>
+                      <td className="p-4 sm:p-5 font-bold text-slate-800 text-xs sm:text-sm whitespace-nowrap">Mg ke-{row.minggu || '-'}</td>
                       <td className="p-4 sm:p-5 font-bold text-[#b10d11] text-xs sm:text-sm">{row.bidang}</td>
                       <td className="p-4 sm:p-5">
                         <div className="text-xs sm:text-sm font-bold text-slate-700 leading-tight">{row.jenis}</div>
-                        <div className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1 mb-1.5 sm:mb-2">{row.tanggal}</div>
-                        {row.dokumentasi && row.dokumentasi !== '-' && (
-                           <a href={row.dokumentasi} target="_blank" rel="noreferrer" className="inline-flex items-center text-[10px] sm:text-xs font-bold text-blue-600 bg-blue-50 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-blue-100 transition-colors"><ImageIcon size={12} className="mr-1 sm:mr-1.5"/> Foto</a>
-                        )}
+                        <div className="text-[10px] sm:text-xs font-medium text-slate-400 mt-1 mb-1.5 sm:mb-2">{row.tanggal || 'Belum diatur'}</div>
                       </td>
                       <td className="p-4 sm:p-5">{renderStatusBadge(row.status)}</td>
                       <td className="p-4 sm:p-5 text-center">
                         <div className="flex justify-center space-x-1.5 sm:space-x-2">
+                          <button onClick={() => setSelectedReport(row)} className="p-2 sm:p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white rounded-lg sm:rounded-xl transition-all border border-blue-100 hover:shadow-md hover:-translate-y-0.5" title="Detail Laporan"><Eye size={16} strokeWidth={2.5}/></button>
                           <button onClick={() => handleUbahStatus(row.id, 'Disetujui')} className="p-2 sm:p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-lg sm:rounded-xl transition-all border border-emerald-100 hover:shadow-md hover:-translate-y-0.5" title="Setujui"><Check size={16} strokeWidth={2.5}/></button>
                           <button onClick={() => handleUbahStatus(row.id, 'Revisi')} className="p-2 sm:p-2.5 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white rounded-lg sm:rounded-xl transition-all border border-red-100 hover:shadow-md hover:-translate-y-0.5" title="Revisi"><X size={16} strokeWidth={2.5}/></button>
                           <button onClick={() => handleDeleteReport(row.id)} className="p-2 sm:p-2.5 bg-slate-50 text-slate-500 hover:bg-slate-800 hover:text-white rounded-lg sm:rounded-xl transition-all border border-slate-200 hover:shadow-md hover:-translate-y-0.5" title="Hapus"><Trash2 size={16} strokeWidth={2.5}/></button>
@@ -830,7 +883,7 @@ export default function App() {
                   <div key={minggu} className="p-6 sm:p-8 md:p-10 border border-slate-100 rounded-3xl sm:rounded-[2rem] bg-white shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-2 sm:w-3 h-full bg-[#b10d11]"></div>
                     <h3 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-6 sm:mb-8 flex items-center">
-                       <Activity className="mr-2 sm:mr-3 text-[#b10d11] sm:w-7 sm:h-7" size={24} /> Minggu ke-{minggu}
+                       <Activity className="mr-2 sm:mr-3 text-[#b10d11] sm:w-7 sm:h-7" size={24} /> Minggu ke-{minggu || '-'}
                     </h3>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
@@ -839,7 +892,7 @@ export default function App() {
                             <div className="flex justify-between items-start mb-3 sm:mb-4">
                                 <div>
                                   <h4 className="font-bold text-[#b10d11] text-base sm:text-lg leading-tight">{lap.bidang}</h4>
-                                  <div className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-1">{lap.tanggal}</div>
+                                  <div className="text-[10px] sm:text-xs font-semibold text-slate-400 mt-1">{lap.tanggal || 'Belum diatur'}</div>
                                 </div>
                                 <span className="text-[10px] sm:text-xs font-extrabold text-red-800 bg-red-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-center shrink-0 ml-2">{lap.jenis}</span>
                             </div>
