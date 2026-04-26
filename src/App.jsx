@@ -3,7 +3,7 @@ import {
   PlusSquare, Lock, LogOut, Edit, Search, Settings, 
   Bot, FileText, Printer, Send, CheckCircle, XCircle, 
   Clock, Camera, Image as ImageIcon, Check, X, AlertTriangle,
-  Users, Activity, Trash2, Eye
+  Users, Activity, Trash2, Calendar, Eye
 } from 'lucide-react';
 
 // Mengosongkan data dummy
@@ -16,6 +16,9 @@ export default function App() {
   const [reports, setReports] = useState(INITIAL_MOCK_DATA);
   const [filterBidang, setFilterBidang] = useState('Semua');
   
+  // Filter Tanggal untuk Laporan Pembina / Print
+  const [filterDate, setFilterDate] = useState('');
+
   // Modal & Notification State
   const [notif, setNotif] = useState({ isOpen: false, message: '', bgColor: '' });
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'alert', resolve: null });
@@ -264,10 +267,19 @@ export default function App() {
     }
   };
 
+  // Fungsi Helper untuk memfilter laporan yang disetujui berdasarkan tanggal spesifik
+  const getFilteredApprovedReports = () => {
+    return reports.filter(r => {
+      if (r.status !== 'Disetujui') return false;
+      if (filterDate && r.tanggal !== filterDate) return false;
+      return true;
+    });
+  };
+
   const analyzeWithAI = () => {
-    const approvedReports = reports.filter(r => r.status === 'Disetujui');
+    const approvedReports = getFilteredApprovedReports();
     if (approvedReports.length === 0) {
-      showModalPromise({ title: 'Data Kosong', message: 'Belum ada laporan lapangan yang disetujui untuk dianalisis oleh AI.', type: 'alert' });
+      showModalPromise({ title: 'Data Kosong', message: 'Belum ada laporan lapangan yang disetujui pada tanggal tersebut untuk dianalisis oleh AI.', type: 'alert' });
       return;
     }
 
@@ -310,6 +322,22 @@ export default function App() {
         ? `Pengurus dan Pembina perlu menindaklanjuti kendala lapangan yang dilaporkan oleh masing-masing bidang. Disarankan untuk mengadakan koordinasi internal, memastikan kesiapan sarana prasarana, serta mencari solusi atas hambatan operasional tersebut sebelum jadwal latihan berikutnya.`
         : `Tidak ada masalah berarti. Kinerja, kedisiplinan, dan kesiapan sarana prasarana sudah sangat baik dan perlu dipertahankan untuk minggu berikutnya.`;
 
+    const dokumentasiHTML = approvedReports
+      .filter(r => r.dokumentasi && r.dokumentasi !== '-')
+      .map(r => `
+        <div style="display: inline-block; width: 45%; margin: 2%; text-align: center; vertical-align: top; border: 1px solid #ddd; padding: 10px; background: #fff; box-sizing: border-box; border-radius: 8px;">
+          <div style="height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 8px; border-radius: 4px; background: #f8f9fa;">
+            <img src="${r.dokumentasi}" alt="Foto ${r.bidang}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+          </div>
+          <p style="margin: 0; font-size: 11pt; font-weight: bold; font-family: 'Times New Roman', serif; color: #b10d11;">${r.bidang}</p>
+          <a href="${r.dokumentasi}" target="_blank" style="font-size: 9pt; font-family: 'Times New Roman', serif; color: #2563eb; text-decoration: none; margin-top: 4px; display: inline-block;">Buka Lampiran Asli</a>
+        </div>
+      `).join('');
+
+    const dokumentasiSection = dokumentasiHTML.length > 0
+      ? `<div style="text-align: center; margin-top: 15px;">${dokumentasiHTML}</div>`
+      : `<p style="font-family: 'Times New Roman', serif; font-size: 12pt;">Tidak ada lampiran foto dokumentasi untuk minggu ini.</p>`;
+
     setTimeout(() => {
       const generatedHTML = `
         <div style="text-align: center; margin-bottom: 24px; font-family: 'Times New Roman', serif;">
@@ -350,7 +378,7 @@ export default function App() {
         </table>
         
         <h4 style="border-bottom: 2px solid #b10d11; padding-bottom: 6px; color:#b10d11; margin-top: 24px; font-family: 'Times New Roman', serif; font-size: 12pt;">DOKUMENTASI</h4>
-        <p style="font-family: 'Times New Roman', serif; font-size: 12pt;">Link / Keterangan: Seluruh bukti dokumentasi lapangan per bidang telah diunggah dan diarsipkan secara digital di dalam SIP-PMR SMANEL.</p>
+        ${dokumentasiSection}
         
         <br>
         <p style="font-family: 'Times New Roman', serif; font-size: 12pt;">Demikian laporan evaluasi ini disusun sebagai bentuk pertanggungjawaban kegiatan mingguan PMR.</p>
@@ -666,12 +694,12 @@ export default function App() {
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Unggah Bukti Kegiatan</label>
-                  <input type="file" id="dokumentasi" accept="image/*" onChange={handleFormChange} className="w-full p-2.5 sm:p-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-[#b10d11] hover:file:bg-red-100 transition-all cursor-pointer text-slate-500" />
+                  <label className={labelClass}>Unggah Bukti Kegiatan *</label>
+                  <input type="file" id="dokumentasi" accept="image/*" required onChange={handleFormChange} className="w-full p-2.5 sm:p-3 bg-white border border-slate-200 rounded-xl sm:rounded-2xl text-xs sm:text-sm file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-red-50 file:text-[#b10d11] hover:file:bg-red-100 transition-all cursor-pointer text-slate-500" />
                 </div>
                 <div className="col-span-1 md:col-span-2">
-                  <label className={labelClass}>Catatan & Kendala Lapangan</label>
-                  <textarea id="kendala" rows="2" onChange={handleFormChange} placeholder="Opsional: Tuliskan hambatan yang dialami (misal: alat mitela kurang)..." className={inputClass}></textarea>
+                  <label className={labelClass}>Catatan & Kendala Lapangan *</label>
+                  <textarea id="kendala" rows="2" required onChange={handleFormChange} placeholder="Tuliskan hambatan yang dialami (atau tulis 'Tidak ada kendala' jika lancar)..." className={inputClass}></textarea>
                 </div>
               </div>
               <div className="mt-8 sm:mt-12 flex justify-end pt-5 sm:pt-6 border-t border-slate-100">
@@ -826,9 +854,20 @@ export default function App() {
               <p className="text-slate-500 mt-2 sm:mt-3 font-medium text-sm sm:text-lg">Ringkasan Eksekutif berbasis AI & Data Terpadu</p>
             </div>
             
+            {/* Filter Tanggal AI & Print */}
+            <div className="mb-6 sm:mb-8 p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row items-start sm:items-end gap-4 no-print shadow-sm">
+              <div className="w-full sm:w-auto">
+                <label className="block text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5"><Calendar size={12} className="inline mr-1"/> Pilih Tanggal</label>
+                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="w-full p-2.5 sm:p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-red-100 focus:border-[#b10d11] transition-all text-xs sm:text-sm font-medium text-slate-700" />
+              </div>
+              <div className="w-full sm:w-auto flex gap-2">
+                <button onClick={() => { setFilterDate(''); setAiResultHTML(''); }} className="w-full sm:w-auto px-4 py-2.5 sm:py-3 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-colors text-xs sm:text-sm">Reset</button>
+              </div>
+            </div>
+
             <div className="mb-8 sm:mb-10 no-print flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-4">
               <button onClick={analyzeWithAI} disabled={isAnalyzing} className="w-full sm:w-auto justify-center bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-lg shadow-slate-900/20 flex items-center transition-all hover:-translate-y-1 disabled:opacity-70 disabled:transform-none disabled:shadow-none text-sm sm:text-base">
-                {isAnalyzing ? <Bot className="animate-pulse mr-2 sm:mr-2.5" size={18}/> : <Bot className="mr-2 sm:mr-2.5" size={18}/>}
+                {isAnalyzing ? <Bot className="animate-pulse mr-2 sm:mr-2.5 sm:w-5 sm:h-5" size={18} /> : <Bot className="mr-2 sm:mr-2.5 sm:w-5 sm:h-5" size={18} />}
                 {isAnalyzing ? 'Menyusun Laporan...' : 'Susun dengan AI'}
               </button>
               {aiResultHTML && (
@@ -870,16 +909,16 @@ export default function App() {
                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-800 flex items-center">
                     Daftar Data Tervalidasi
                  </h3>
-                 <span className="px-3 sm:px-4 py-1 sm:py-1.5 bg-red-100 text-[#b10d11] rounded-full text-xs sm:text-sm font-bold w-fit">{reports.filter(r => r.status === 'Disetujui').length} Laporan</span>
+                 <span className="px-3 sm:px-4 py-1 sm:py-1.5 bg-red-100 text-[#b10d11] rounded-full text-xs sm:text-sm font-bold w-fit">{getFilteredApprovedReports().length} Laporan Ditemukan</span>
               </div>
               
-              {reports.filter(r => r.status === 'Disetujui').length === 0 ? (
+              {getFilteredApprovedReports().length === 0 ? (
                  <div className="text-center py-12 sm:py-16 bg-slate-50 rounded-3xl sm:rounded-[2rem] border-2 border-dashed border-slate-200">
                    <div className="text-4xl sm:text-5xl mb-3 sm:mb-4 grayscale opacity-40">📄</div>
-                   <p className="text-slate-500 font-bold text-sm sm:text-lg">Belum ada laporan yang disetujui.</p>
+                   <p className="text-slate-500 font-bold text-sm sm:text-lg">Belum ada laporan yang disetujui pada tanggal tersebut.</p>
                  </div>
               ) : (
-                Array.from(new Set(reports.filter(r => r.status === 'Disetujui').map(r => r.minggu))).sort((a,b)=>a-b).map(minggu => (
+                Array.from(new Set(getFilteredApprovedReports().map(r => r.minggu))).sort((a,b)=>a-b).map(minggu => (
                   <div key={minggu} className="p-6 sm:p-8 md:p-10 border border-slate-100 rounded-3xl sm:rounded-[2rem] bg-white shadow-sm relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-2 sm:w-3 h-full bg-[#b10d11]"></div>
                     <h3 className="text-xl sm:text-2xl font-extrabold text-slate-800 mb-6 sm:mb-8 flex items-center">
@@ -887,7 +926,7 @@ export default function App() {
                     </h3>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
-                      {reports.filter(r => r.status === 'Disetujui' && r.minggu === minggu).map(lap => (
+                      {getFilteredApprovedReports().filter(r => r.minggu === minggu).map(lap => (
                          <div key={lap.id} className="bg-slate-50 p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 hover:shadow-md hover:border-red-100 transition-all duration-300">
                             <div className="flex justify-between items-start mb-3 sm:mb-4">
                                 <div>
